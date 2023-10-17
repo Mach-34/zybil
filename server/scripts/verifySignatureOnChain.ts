@@ -1,22 +1,35 @@
-// import {
-//     createPXEClient,
-//     Contract,
-//     GrumpkinScalar,
-//     generatePublicKey,
-//     getSandboxAccountsWallets,
-// } from "@aztec/aztec.js";
+import {
+    createPXEClient,
+    Contract,
+    GrumpkinScalar,
+    generatePublicKey,
+    getSandboxAccountsWallets,
+    Wallet,
+} from "@aztec/aztec.js";
+import { ContractArtifact } from '@aztec/foundation/abi';
 // import { Schnorr } from "@aztec/circuits.js/src/barretenberg";
-// import ZybilContractAbi from '../../contracts/zybil/target/Zybil.json' assert {type: 'json'};
+import ZybilContractAbi from '../../contracts/l2/target/Zybil.json' assert {type: 'json'};
 // import { objectToUint8Array } from "../utils/index.js";
 
-// const sandboxURL = 'http://localhost:8080';
+const sandboxURL = 'http://localhost:8080';
 
-// async function main() {
-//     const client = createPXEClient(sandboxURL);
-//     const [wallet] = await getSandboxAccountsWallets(client);
-//     const contract = await Contract.deploy(client, ZybilContractAbi, []).send().deployed();
+async function main() {
+    const client = createPXEClient(sandboxURL);
+    const zybil = await Contract.deploy(client as Wallet, ZybilContractAbi as ContractArtifact, []).send().deployed();
+    console.log('Zybil: ', zybil)
 
-// }
+}
+
+main()
+    .then(() => {
+        console.log('Process exited successfully');
+        process.exit(0);
+    })
+    .catch((err: Error) => {
+        console.error(err);
+        process.exit(1);
+    });
+
 // (async () => {
 //     const zybil =
 
@@ -31,15 +44,15 @@
 //         },
 //         valid: verified_email,
 //     }
-    
+
 //     const msg = objectToUint8Array(data);
 //     const schnorr = await Schnorr.new();
 //     const signature = schnorr.constructSignature(msg, privkey);
 //     const signatureBytes = new Uint8Array(signature.buffer);
 //     const verified = await zybil.methods.verify_signature(
-//         {x: pubkey.x.value, y: pubkey.y.value},
+//         { x: pubkey.x.value, y: pubkey.y.value },
 //         signatureBytes,
 //         msg
 //     ).view();
 //     console.log('Verified: ', verified);
-// })();
+// }) ();
