@@ -1,0 +1,236 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IOutbox",
+  "sourceName": "@aztec/l1-contracts/src/core/interfaces/messagebridge/IOutbox.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "MessageAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "entryKey",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "MessageConsumed",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "actor",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "version",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L2Actor",
+              "name": "sender",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "actor",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L1Actor",
+              "name": "recipient",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "content",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DataStructures.L2ToL1Msg",
+          "name": "_message",
+          "type": "tuple"
+        }
+      ],
+      "name": "computeEntryKey",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "actor",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "version",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L2Actor",
+              "name": "sender",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "actor",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L1Actor",
+              "name": "recipient",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "content",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DataStructures.L2ToL1Msg",
+          "name": "_message",
+          "type": "tuple"
+        }
+      ],
+      "name": "consume",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "contains",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "get",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "fee",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint32",
+              "name": "count",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "version",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "deadline",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct DataStructures.Entry",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "_entryKeys",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "sendL1Messages",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
