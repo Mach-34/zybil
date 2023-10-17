@@ -1,23 +1,21 @@
-use dep::aztec::context::{PrivateContext, PublicContext};
+use dep::aztec::context::Context;
 use dep::aztec::state_vars::{
     map::Map,
     set::Set,
     singleton::Singleton,
-    public_state::PublicState
-    address
+    public_state::PublicState,
 };
-use dep::aztec::types::type_serialisation::field_serialisation::{
-    FieldSerialisationMethods,
-    FIELD_SERIALISED_LEN
+use dep::aztec::types::type_serialization::field_serialization::{
+    FieldSerializationMethods,
+    FIELD_SERIALIZED_LEN
 };
 use dep::address_note::address_note::{
     AddressNote,
     AddressNoteMethods,
-    ADDRESS_NOTE_LEN
+    ADDRESS_NOTE_LEN,
 };
-use dep::std::option::Option;
 use crate::types::{
-    stamp_note::{ StampNote, StampNoteMethods, STAMP_SERIALISED_NOTE_LEN },
+    stamp_note::{ StampNote, StampNoteMethods, STAMP_SERIALIZED_NOTE_LEN },
 };
 
 mod StorageSlots {
@@ -27,41 +25,33 @@ mod StorageSlots {
 }
 
 struct Storage {
-    backend: PublicState<AddressNote, ADDRESS_NOTE_LEN>,
-    stamp_type: Map<PublicState<Field, FIELD_SERIALISED_LEN>>,
-    stamps: Map<Set<StampNote, STAMP_SERIALISED_NOTE_LEN>>
+    // backend: PublicState<AddressNote, ADDRESS_NOTE_LEN>,
+    stamp_type: Map<PublicState<Field, FIELD_SERIALIZED_LEN>>,
+    stamps: Map<Set<StampNote, STAMP_SERIALIZED_NOTE_LEN>>
 }
 
 impl Storage {
-    fn init(
-        private_context: Option<&mut PrivateContext>,
-        public_context: Option<&mut PublicContext>
-    ) -> Self {
+    fn init(context: Context) -> Self {
         Storage {
-            backend: PublicState::new(
-                private_context,
-                public_context,
-                StorageSlots::BACKEND_ID,
-                AddressNoteMethods
-            ),
-            stamp: Map::new(
-                private_context,
-                public_context,
+            // backend: PublicState::new(
+            //     context,
+            //     StorageSlots::BACKEND_ID,
+            //     AddressNoteMethods
+            // ),
+            stamp_type: Map::new(
+                context,
                 StorageSlots::STAMP_TYPE_ID,
-                |private_context, public_context, slot| PublicState::new(
-                    private_context,
-                    public_context,
+                |context, slot| PublicState::new(
+                    context,
                     slot,
-                    FieldSerialisationMethods
+                    FieldSerializationMethods
                 )
             ),
             stamps: Map::new(
-                private_context,
-                public_context,
+                context,
                 StorageSlots::STAMPS_ID,
-                |private_context, public_context, slot| Singleton::new(
-                    private_context,
-                    public_context,
+                |context, slot| Set::new(
+                    context,
                     slot,
                     StampNoteMethods
                 )
