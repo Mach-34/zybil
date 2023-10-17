@@ -1,0 +1,371 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IInbox",
+  "sourceName": "@aztec/l1-contracts/src/core/interfaces/messagebridge/IInbox.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "L1ToL2MessageCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "entryKey",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "recipient",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "senderChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "recipientVersion",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "deadline",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "fee",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "content",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "secretHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "MessageAdded",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "_entryKeys",
+          "type": "bytes32[]"
+        },
+        {
+          "internalType": "address",
+          "name": "_feeCollector",
+          "type": "address"
+        }
+      ],
+      "name": "batchConsume",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "actor",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L1Actor",
+              "name": "sender",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "actor",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "version",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L2Actor",
+              "name": "recipient",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "content",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "secretHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "deadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "fee",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DataStructures.L1ToL2Msg",
+          "name": "_message",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "_feeCollector",
+          "type": "address"
+        }
+      ],
+      "name": "cancelL2Message",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "actor",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L1Actor",
+              "name": "sender",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "actor",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "version",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct DataStructures.L2Actor",
+              "name": "recipient",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "content",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "secretHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "deadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "fee",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DataStructures.L1ToL2Msg",
+          "name": "_message",
+          "type": "tuple"
+        }
+      ],
+      "name": "computeEntryKey",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "contains",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_entryKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "get",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "fee",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint32",
+              "name": "count",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "version",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "deadline",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct DataStructures.Entry",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "actor",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "version",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct DataStructures.L2Actor",
+          "name": "_recipient",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_deadline",
+          "type": "uint32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_content",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_secretHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "sendL2Message",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "withdrawFees",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
