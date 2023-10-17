@@ -1,3 +1,5 @@
+use dep::aztec::hash::sha256_to_field;
+
 pub fn get_ens_stamp_private_content_hash(
     secret_redemption_hash: Field,
     name: Field,
@@ -6,7 +8,7 @@ pub fn get_ens_stamp_private_content_hash(
 ) -> Field {
     // 132 = 32 * 4 + 4
     let mut hash_bytes: [u8; 132] = [0; 132];
-    let secret_hash_bytes = secret_hash_for_redeeming_minted_notes.to_be_bytes(32);
+    let secret_hash_bytes = secret_redemption_hash.to_be_bytes(32);
     let name_bytes = name.to_be_bytes(32);
     let timestamp_bytes = timestamp.to_be_bytes(32);
     let canceller_bytes = canceller.to_be_bytes(32);
@@ -20,10 +22,10 @@ pub fn get_ens_stamp_private_content_hash(
     }
 
     // ethers.id("stamp_ens(bytes32,bytes32,uint256,address)").slice(0, 10)
-    hash_bytees[0] = 0x5e;
-    hash_bytees[1] = 0x8d;
-    hash_bytees[2] = 0x7e;
-    hash_bytees[3] = 0x7e;
+    hash_bytes[0] = 0x5e;
+    hash_bytes[1] = 0x8d;
+    hash_bytes[2] = 0x7e;
+    hash_bytes[3] = 0x7e;
 
-    dep::std::hash::sha256_to_field(hash_bytes)
+    sha256_to_field(hash_bytes)
 }
