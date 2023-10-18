@@ -1,4 +1,3 @@
-mod storage;
 mod types;
 mod util;
 
@@ -6,22 +5,75 @@ contract Zybil {
     use dep::aztec::{
         context::Context,
         hash::compute_secret_hash,
-        state_vars::public_state::PublicState,
+        state_vars::{map::Map, public_state::PublicState, set::Set},
         types::type_serialization::field_serialization::{
             FieldSerializationMethods, FIELD_SERIALIZED_LEN
         },
         types::address::{AztecAddress, EthereumAddress},
         selector::compute_selector,
     };
-    use crate::util::get_ens_stamp_private_content_hash;
+    use crate::{
+        types::{
+            public_key::{ Pubkey, PubkeyMethods, PUBKEY_SERIALIZED_LEN },
+            stamp_note::{ StampNote, StampNoteMethods, STAMP_SERIALIZED_NOTE_LEN }
+        },
+        util::get_ens_stamp_private_content_hash
+    };
+    use dep::std::option::Option;
 
-    // struct Pubkey {
-    //     x: Field,
-    //     y: Field
-    // }
+    mod StorageSlots {
+        global BACKEND_ID = 1;
+        global STAMP_TYPE_ID = 2;
+        global STAMPS_ID = 3;
+        global SIGNER_ID = 4;
+    }
+
+    struct Storage {
+    // backend: PublicState<AddressNote, ADDRESS_NOTE_LEN>,
+        registered_signer: PublicState<Pubkey, PUBKEY_SERIALIZED_LEN>,
+        stamp_type: Map<PublicState<Field, FIELD_SERIALIZED_LEN>>,
+        stamps: Map<Set<StampNote, STAMP_SERIALIZED_NOTE_LEN>>
+    }
+
+    impl Storage {
+        fn init(context: Context) -> pub Self {
+            Storage {
+                // backend: PublicState::new(
+                //     context,
+                //     StorageSlots::BACKEND_ID,
+                //     AddressNoteMethods
+                // ),
+                registered_signer: PublicState::new(
+                    context,
+                    StorageSlots::SIGNER_ID,
+                    PubkeyMethods
+                ),
+                stamp_type: Map::new(
+                    context,
+                    StorageSlots::STAMP_TYPE_ID,
+                    |context, slot| PublicState::new(
+                        context,
+                        slot,
+                        FieldSerializationMethods
+                    )
+                ),
+                stamps: Map::new(
+                    context,
+                    StorageSlots::STAMPS_ID,
+                    |context, slot| Set::new(
+                        context,
+                        slot,
+                        StampNoteMethods
+                    )
+                ),
+            }
+        }
+    }
 
     #[aztec(private)]
-    fn constructor() {
+    fn constructor(signer: Pubkey) {
+        // Set registered signer
+        storage.registered_signer.write(signer);
         // set the backend address based on the sender
         // setup bridge
         // let selector = compute_selector("_initialize((Field))");
@@ -47,6 +99,10 @@ contract Zybil {
         );
     }
 
+    // unconstrained fn get_registered_signer() -> Pubkey {
+    //     let storage = Storage::init(Context::public(&mut context));
+    //     storage.registered_signer.read()
+    // }
 
 
     // unconstrained fn verify_signature(pubkey: Pubkey, signature: [u8; 64], msg: [u8]) -> bool {
