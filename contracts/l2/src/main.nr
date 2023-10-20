@@ -81,7 +81,7 @@ contract Zybil {
     #[aztec(private)]
     fn constructor(signer: Pubkey) {
         // Set registered signer
-        let selector = compute_selector("initialize(Field,Field)");
+        let selector = compute_selector("initialize((Field,Field))");
         context.call_public_function(context.this_address(), selector, [signer.x, signer.y]);
         // set the backend address based on the sender
         // setup bridge
@@ -118,13 +118,13 @@ contract Zybil {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
 
-    #[aztec(public)]
-    internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
-        let Pubkey { x, y } = storage.registered_signer.read();
-        schnorr::verify_signature(x, y, signature, msg)
-    }
+    // #[aztec(public)]
+    // internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
+    //     let Pubkey { x, y } = storage.registered_signer.read();
+    //     schnorr::verify_signature(x, y, signature, msg)
+    // }
 
-    unconstrained fn registered_signer() -> Pubkey {
-        storage.registered_signer.read()
-    }
+    // unconstrained fn registered_signer() -> Pubkey {
+    //     storage.registered_signer.read()
+    // }
 }

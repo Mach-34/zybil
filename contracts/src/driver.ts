@@ -13,8 +13,8 @@ import {
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';
 import { Signer, Contract } from 'ethers';
-import { ZybilContract } from '../artifacts/l2/Zybil.js';
-import { ENSFactory, PortalFactory } from '../artifacts/index.js';
+import { ZybilContract } from './artifacts/l2/Zybil.js';
+import { ENSFactory, PortalFactory } from './artifacts/index.js';
 
 const DEADLINE = 2 ** 32 - 1; // message expiry deadline
 
@@ -54,10 +54,12 @@ export async function deployAndInitialize(
 
 
     // deploy instance of L2 Zybil Contract using deployer as backend
-    const backend = aztecWallet.getCompleteAddress().address;
-    const deployReceipt = await ZybilContract.deploy(aztecWallet).send({
+    const backend = aztecWallet.getCompleteAddress().publicKey;
+    console.log("Backend: ", backend);
+    const deployReceipt = await ZybilContract.deploy(aztecWallet, backend).send({
         portalContract: EthAddress.fromString(await portal.getAddress()),
     }).wait();
+    console.log("success");
 
     // check that the deploy tx is confirmed
     if (deployReceipt.status !== TxStatus.MINED) throw new Error(`Deploy token tx status is ${deployReceipt.status}`);
