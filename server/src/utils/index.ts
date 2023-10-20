@@ -16,3 +16,9 @@ export const numToHex = (num: number) => {
     // Add missing padding based of hex number length
     return `${'0'.repeat(64 - hex.length)}${hex}`;
 }
+
+export const padBytes = (bytes: Uint8Array) => {
+    const padded = new Uint8Array(380);
+    padded.set(bytes);
+    return padded;
+}

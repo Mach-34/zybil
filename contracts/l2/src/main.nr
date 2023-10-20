@@ -5,12 +5,14 @@ contract Zybil {
     use dep::aztec::{
         context::Context,
         hash::compute_secret_hash,
-        state_vars::{map::Map, public_state::PublicState, set::Set},
-        types::type_serialization::field_serialization::{
-            FieldSerializationMethods, FIELD_SERIALIZED_LEN
-        },
-        types::address::{AztecAddress, EthereumAddress},
         selector::compute_selector,
+        state_vars::{map::Map, public_state::PublicState, set::Set},
+        types::{
+            address::{AztecAddress, EthereumAddress},
+            type_serialization::field_serialization::{
+                FieldSerializationMethods, FIELD_SERIALIZED_LEN
+            }
+        },
     };
     use crate::{
         types::{
@@ -19,7 +21,13 @@ contract Zybil {
         },
         util::get_ens_stamp_private_content_hash
     };
-    use dep::std::option::Option;
+    use dep::std::{
+        option::Option,
+        schnorr
+    };
+
+    // Largest possible signed message length
+    global MAX_MSG_LEN = 380;
 
     mod StorageSlots {
         global BACKEND_ID = 1;
@@ -73,7 +81,8 @@ contract Zybil {
     #[aztec(private)]
     fn constructor(signer: Pubkey) {
         // Set registered signer
-        storage.registered_signer.write(signer);
+        let selector = compute_selector("initialize(Field,Field)");
+        context.call_public_function(context.this_address(), selector, [signer.x, signer.y]);
         // set the backend address based on the sender
         // setup bridge
         // let selector = compute_selector("_initialize((Field))");
@@ -99,14 +108,23 @@ contract Zybil {
         );
     }
 
-    // unconstrained fn get_registered_signer() -> Pubkey {
-    //     let storage = Storage::init(Context::public(&mut context));
-    //     storage.registered_signer.read()
+    // #[aztec(private)]
+    // fn stamp_web2() {
+        
     // }
 
+    #[aztec(public)]
+    internal fn initialize(signer_x: Field, signer_y: Field) {
+        storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
+    }
 
-    // unconstrained fn verify_signature(pubkey: Pubkey, signature: [u8; 64], msg: [u8]) -> bool {
-    //     // std::schnorr::verify_signature(pubkey.x, pubkey.y, signature, msg)
-    //     true
-    // }
+    #[aztec(public)]
+    internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
+        let Pubkey { x, y } = storage.registered_signer.read();
+        schnorr::verify_signature(x, y, signature, msg)
+    }
+
+    unconstrained fn registered_signer() -> Pubkey {
+        storage.registered_signer.read()
+    }
 }
