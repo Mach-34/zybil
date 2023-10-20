@@ -108,21 +108,33 @@ contract Zybil {
         );
     }
 
-    // #[aztec(private)]
-    // fn stamp_web2() {
-        
-    // }
+    #[aztec(private)]
+    fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
+        // Ensure signature is valid before storing stamp
+        let Pubkey { x, y } = storage.registered_signer.read();
+        let valid_signature = schnorr::verify_signature(x, y, signature, msg);
+        assert(valid_signature, "Invalid signature");
+
+        let note = StampNote::new(
+            context.msg_sender(),
+            0, // TODO
+            context.timestamp(), // TODO
+            [0, 0, 0]
+        );        
+
+        // assert(valid_signature(&mut context, signature, msg).call(), "Signature invalid");
+    }
 
     #[aztec(public)]
     internal fn initialize(signer_x: Field, signer_y: Field) {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
 
-    #[aztec(public)]
-    internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
-        let Pubkey { x, y } = storage.registered_signer.read();
-        schnorr::verify_signature(x, y, signature, msg)
-    }
+    // #[aztec(private)]
+    // internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
+    //     let Pubkey { x, y } = storage.registered_signer.read();
+    //     schnorr::verify_signature(x, y, signature, msg)
+    // }
 
     unconstrained fn registered_signer() -> Pubkey {
         storage.registered_signer.read()
