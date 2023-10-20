@@ -1,30 +1,32 @@
-import { ethers, run } from 'hardhat';
-import { Signer } from 'ethers';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-async function main() {
-    const network = await ethers.provider.getNetwork();
-    console.log(`====================================`);
-    console.log(`Deploying Zybil L1 Contracts to ${network.name} (${network.chainId})...`)
-    // get deployer wallet
-    const [deployer]: Signer[] = await ethers.getSigners();
-
-    // deploy ens toy verifier
-    const ensFactory = await ethers.getContractFactory('ToyENS');
-    const ens = await ensFactory.deploy();
-    await ens.waitForDeployment();
-    const ensAddress = await ens.getAddress();
-
-    // deploy zybil
-    console.log(`Deployed ENS Contract to ${ensAddress}`)
-}
+// import { ethers, run } from 'hardhat';
+// import {
+//     AztecAddress,
+//     DebugLogger,
+//     EthAddress,
+//     Fr,
+//     NotePreimage,
+//     PXE,
+//     TxHash,
+//     TxStatus,
+//     Wallet,
+//     computeMessageSecretHash,
+//     deployL1Contract,
+//     sha256ToField,
+//   } from "@aztec/aztec.js";
+// import { Signer } from 'ethers';
+// import { deployL1 } from './utils/l1.js';
 
 
+// async function main() {
+//     // deploy L1 contracts
+//     const { ens, portal } = await deployL1();
+// }
 
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+
+
+// main()
+//     .then(() => process.exit(0))
+//     .catch(error => {
+//         console.error(error);
+//         process.exit(1);
+//     });

@@ -1,5 +1,6 @@
 import "dotenv/config";
-import "@nomicfoundation/hardhat-ethers";
+import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-viem";
 import "@nomicfoundation/hardhat-chai-matchers";
 import {
     HardhatUserConfig,

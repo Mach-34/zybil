@@ -13,15 +13,18 @@ contract ZybilPortal {
     IRegistry public registry;
     ToyENS public underlying;
     bytes32 public l2ZybilAddress;
+    bool initialized;
 
     function initialize(
         address _registry,
         address _underlying,
         bytes32 _l2ZybilAddress
     ) public {
+        require(initialized == false, "Already initialized");
         registry = IRegistry(_registry);
         underlying = ToyENS(_underlying);
         l2ZybilAddress = _l2ZybilAddress;
+        initialized = true;
     }
 
     /**
