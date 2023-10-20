@@ -123,7 +123,7 @@ contract Zybil {
             0, // TODO
             [0, 0, 0]
         );        
-        
+        note.insert()
     }
 
     #[aztec(public)]
