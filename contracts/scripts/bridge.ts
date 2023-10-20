@@ -10,7 +10,7 @@ async function main() {
     // get deployer wallet
     const [deployer]: Signer[] = await ethers.getSigners();
 
-    // deploy groth16 verifier
+    // deploy ens toy verifier
     const ensFactory = await ethers.getContractFactory('ToyENS');
     const ens = await ensFactory.deploy();
     await ens.waitForDeployment();
@@ -19,6 +19,8 @@ async function main() {
     // deploy zybil
     console.log(`Deployed ENS Contract to ${ensAddress}`)
 }
+
+
 
 main()
     .then(() => process.exit(0))
