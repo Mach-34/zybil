@@ -5,6 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "artifacts": "./scripts/artifacts.sh",
     "test": "yarn hardhat test test/test.ts",
     "deploy:sandbox": "yarn hardhat run scripts/deploy.ts --network localhost"
   },

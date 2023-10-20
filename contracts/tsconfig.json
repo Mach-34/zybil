@@ -17,5 +17,5 @@
       "skipLibCheck": true,
     },
     "references": [],
-    "include": ["src", "test", "./hardhat.config.ts", "scripts"],
+    "include": ["src", "test", "contracts/hardhat.config.ts", "scripts"],
   }

@@ -1,0 +1,13 @@
+{
+  "name": "@zybil/l1-contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "compile": "hardhat compile"
+  },
+  "dependencies": {
+    "@aztec/l1-contracts": "^0.9.0",
+    "hardhat": "^2.18.2"
+  }
+}

@@ -28,20 +28,18 @@ contract ZybilPortal {
     }
 
     /**
-     * @notice Gets the age of an ENS record for the given account
-     * @param _secretRedemptionHash - The hash of the secret to redeem minted notes privately on Aztec. The hash should be 254 bits (so it can fit in a Field element)
-     * @param _address - the address to get ENS name for
-     * @param _canceller - The address that can cancel the L1 to L2 message
+     * Gets the age of an ENS record for the given account
+     * @notice uses msg.sender for ens lookup and canceller
+     *
      * @param _deadline - The timestamp after which the entry can be cancelled
-     * @param _secretConsumptionHash - The hash of the secret consumable L1 to L2 message. The hash should be 254 bits (so it can fit in a Field element)
+     * @param _redemptionHash - The hash of the secret to redeem minted notes privately on Aztec. The hash should be 254 bits (so it can fit in a Field element)
+     * @param _consumptionHash - The hash of the secret consumable L1 to L2 message. The hash should be 254 bits (so it can fit in a Field element)
      * @return _key - The key of the entry in the Inbox
      */
     function pushENSToAztec(
-        bytes32 _secretRedemptionHash,
-        address _address,
-        address _canceller,
         uint32 _deadline,
-        bytes32 _secretConsumptionHash
+        bytes32 _redemptionHash,
+        bytes32 _consumptionHash
     ) external payable returns (bytes32 _key) {
         // Preamble
         IInbox inbox = registry.getInbox();
@@ -51,23 +49,29 @@ contract ZybilPortal {
         );
 
         // get ens data
-        (string memory name, uint256 timestamp) = getENSRecordAge(_address);
+        (string memory name, uint256 timestamp) = getENSRecordAge(msg.sender);
 
         // Hash message content to be reconstructed in the receiving contract
         bytes32 contentHash = Hash.sha256ToField(
             abi.encodeWithSignature(
                 "stamp_ens(bytes32,bytes32,uint256,address)",
-                _secretRedemptionHash,
+                _redemptionHash,
                 bytes32(bytes(name)),
                 timestamp,
-                _canceller
+                msg.sender
             )
         );
 
         // Send message to L2
         _key = inbox.sendL2Message{value: msg.value}(
-            actor, _deadline, contentHash, _secretConsumptionHash
+            actor,
+            _deadline,
+            contentHash,
+            _consumptionHash
         );
+        
+        // Emit event to retrieve from L2
+        emit L2Message(_key);
     }
 
     function getENSRecordAge(
