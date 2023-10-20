@@ -3,3 +3,4 @@ node_modules
 yarn-error.log
 cache
 artifacts
+./contracts/l2/target
