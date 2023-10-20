@@ -81,7 +81,7 @@ contract Zybil {
     #[aztec(private)]
     fn constructor(signer: Pubkey) {
         // Set registered signer
-        let selector = compute_selector("initialize((Field,Field))");
+        let selector = compute_selector("initialize(Field,Field)");
         context.call_public_function(context.this_address(), selector, [signer.x, signer.y]);
         // set the backend address based on the sender
         // setup bridge
