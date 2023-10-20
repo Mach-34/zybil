@@ -2,5 +2,5 @@
 node_modules
 yarn-error.log
 cache
-artifacts
+contracts/artifacts
 ./contracts/l2/target

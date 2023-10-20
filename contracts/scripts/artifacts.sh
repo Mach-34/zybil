@@ -1,14 +1,25 @@
 #!/bin/sh
 
+# Check that artifacts asset dir exists
+if [ ! -d "./src/artifacts" ]; then
+  mkdir ./src/artifacts
+fi
+if [ ! -d "./src/artifacts/l1" ]; then
+  mkdir ./src/artifacts/l1
+fi
+if [ ! -d "./src/artifacts/l2" ]; then
+  mkdir ./src/artifacts/l2
+fi
+
 # Compiles l1 artifacts and provides to src/artifacts/1
 cd l1
 yarn compile
 cd ..
 mv l1/artifacts/contracts/ToyENS.sol/ToyENS.json src/artifacts/l1
 mv l1/artifacts/contracts/ZybilPortal.sol/ZybilPortal.json src/artifacts/l1
-rm -rf l1/artifacts l1/cache
+rm -rf ./l1/artifacts ./l1/cache
 
-# Compiles l2 artifacts and provides to src/artifacts/2
+# # Compiles l2 artifacts and provides to src/artifacts/2
 cd l2
 aztec-cli compile . -ts .
 cd ..
