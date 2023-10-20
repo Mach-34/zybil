@@ -115,14 +115,15 @@ contract Zybil {
         let valid_signature = schnorr::verify_signature(x, y, signature, msg);
         assert(valid_signature, "Invalid signature");
 
+
+        // TODO: Need to decode data from message
+
         let note = StampNote::new(
             context.msg_sender(),
             0, // TODO
-            context.timestamp(), // TODO
             [0, 0, 0]
         );        
-
-        // assert(valid_signature(&mut context, signature, msg).call(), "Signature invalid");
+        
     }
 
     #[aztec(public)]
