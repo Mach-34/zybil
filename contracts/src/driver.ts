@@ -14,7 +14,7 @@ import {
 import { OutboxAbi } from '@aztec/l1-artifacts';
 import { Signer, Contract } from 'ethers';
 import { ZybilContract } from './artifacts/l2/Zybil.js';
-import { ENSFactory, PortalFactory } from './artifacts/index.js';
+import { ENSFactory, PortalFactory } from './artifacts/index.js'
 
 const DEADLINE = 2 ** 32 - 1; // message expiry deadline
 
