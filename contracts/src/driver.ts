@@ -56,7 +56,7 @@ export async function deployAndInitialize(
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
     console.log("Backend: ", backend);
-    const deployReceipt = await ZybilContract.deploy(aztecWallet, backend).send({
+    const deployReceipt = await ZybilContract.deploy(aztecWallet).send({
         portalContract: EthAddress.fromString(await portal.getAddress()),
     }).wait();
     console.log("success");

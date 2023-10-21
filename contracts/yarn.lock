@@ -187,10 +187,10 @@
   dependencies:
     tslib "^2.4.0"
 
-"@aztec/l1-contracts@^0.8.14":
-  version "0.8.14"
-  resolved "https://registry.yarnpkg.com/@aztec/l1-contracts/-/l1-contracts-0.8.14.tgz#047fa0b35da8e34c37fed2ad6b75ada3c70a1cb0"
-  integrity sha512-m4X8jrK+3tKtOwo8LA7/MmHuIy9hKER00OH++Zq1Ul2ytPNyVtuO9/fbP4OrLmUA5uLxTWhUmO2KS7gIw67fOg==
+"@aztec/l1-contracts@^0.9.0":
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/@aztec/l1-contracts/-/l1-contracts-0.9.0.tgz#26d30e43d87d567aaa030198f89b836c8f2523f9"
+  integrity sha512-SCMvnVHDtIsWsN/vl4CmzeLp/hkJ/Z3QB4P/xycHCkE/ec4l2Y/khHk/6wBgtdbWEBi2wPezsnBc5uPcqtvkOw==
 
 "@aztec/merkle-tree@0.9.0":
   version "0.9.0"
