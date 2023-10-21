@@ -14,7 +14,8 @@ import {
 import { ZybilContract } from '../src/artifacts/index.js';
 import { ZybilDriver, ClaimSecret } from '../src/driver.js';
 import { sleep } from '@aztec/aztec.js';
-import { Signer, Wallet, JsonRpcProvider, HDNodeWallet, Mnemonic } from 'ethers';
+import { Signer, SigningKey, JsonRpcProvider, HDNodeWallet, Mnemonic, } from 'ethers';
+import { ecdsaUncompressedPubkey, ecdsaPubkey } from './utils/index.js';
 
 const {
     PXE_URL = 'http://localhost:8080',
@@ -65,13 +66,15 @@ describe('Zybil', () => {
         }
         // initialilze driver
         driver = await ZybilDriver.new(pxe, aztecUsers.backend, ethUsers.backend, logger);
-        console.log("Driv", driver.zybil.address);
         logger("Initialized Test Environment")
     })
 
-    test("x", async () => {
-        console.log("A");
-       
-    })
+    test("Get Ethereum Address Stamp", async () => {
+        await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
+    });
+    // test("x", async () => {
+    //     console.log("A");
+        
+    // })
 })
 

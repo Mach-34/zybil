@@ -10,11 +10,13 @@ import {
     Wallet as AztecWallet,
     computeMessageSecretHash,
     sha256ToField,
+    AccountWallet,
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';
-import { Signer, Contract } from 'ethers';
+import { Signer, Contract, SigningKey } from 'ethers';
 import { ZybilContract } from './artifacts/l2/Zybil.js';
 import { ENSFactory, PortalFactory } from './artifacts/index.js'
+import { hexTou8Array } from './utils.js';
 
 const DEADLINE = 2 ** 32 - 1; // message expiry deadline
 
@@ -38,7 +40,7 @@ export async function deployAndInitialize(
     ethWallet: Signer,
     registry: EthAddress,
 ): Promise<{
-    zybil: ZybilContract;
+    zybil: AztecAddress;
     portal: Contract;
     ens: Contract;
 }> {
@@ -55,11 +57,9 @@ export async function deployAndInitialize(
 
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
-    console.log("Backend: ", backend);
     const deployReceipt = await ZybilContract.deploy(aztecWallet).send({
         portalContract: EthAddress.fromString(await portal.getAddress()),
     }).wait();
-    console.log("success");
 
     // check that the deploy tx is confirmed
     if (deployReceipt.status !== TxStatus.MINED) throw new Error(`Deploy token tx status is ${deployReceipt.status}`);
@@ -78,11 +78,7 @@ export async function deployAndInitialize(
     await tx.wait();
 
     // return contract addresses
-    return {
-        zybil: zybil,
-        portal: portal,
-        ens: ens
-    };
+    return { zybil: zybil.address, portal, ens};
 }
 
 /**
@@ -140,7 +136,7 @@ export class ZybilDriver {
         /** Logger. */
         public logger: DebugLogger,
         /** L2 Token contract. */
-        public zybil: ZybilContract,
+        public zybil: AztecAddress,
         /** Token portal instance. */
         public portal: Contract,
         /** Underlying token for portal tests. */
@@ -191,5 +187,37 @@ export class ZybilDriver {
         );
         const receipt = await tx.wait();
         return Fr.fromString(receipt.logs[0].args[0]);
+    }
+
+    async stampEthAddress(aztecWallet: AccountWallet, ethWallet: Signer): Promise<void> {
+        // generate inputs for eth address verification stamp
+        const aztecAddress = aztecWallet.getAddress();
+        const signature = await ethWallet.signMessage(aztecAddress.toString())
+        const serialized = SigningKey.recoverPublicKey( aztecAddress.toString(), signature);
+        console.log("S", aztecAddress.toBuffer().length);
+        const inputs = {
+            // slice off 0x (start) and sig_v (end)
+            signature: hexTou8Array(signature.slice(0, -2)),
+            // slice off `0x04` from serialized pubkey
+            pubkey: {
+                x: hexTou8Array(serialized.slice(4, 68)),
+                y: hexTou8Array(serialized.slice(68))
+            }
+        }
+        console.log("Inputs: ", inputs.signature.length);
+        console.log("Inputs: ", inputs.pubkey.x.length);
+        console.log("Inputs: ", inputs.pubkey.y.length);
+        // stamp eth address in L2 Zybil contract
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const receipt = await instance.methods.stamp_ethkey(
+            inputs.pubkey.x,
+            inputs.pubkey.y,
+            inputs.signature
+        ).send().wait();
+        console.log("XXX: ", receipt);
+        // throw if tx does not mine
+        if (receipt.status !== TxStatus.MINED)
+            throw new Error(`Failed to stamp Eth Address: ${receipt.status}`);
+        console.log("XXX: ", receipt);
     }
 }

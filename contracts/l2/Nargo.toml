@@ -2,7 +2,7 @@
 name = "zybil"
 type = "contract"
 authors = [""]
-compiler_version = "0.9.0"
+compiler_version = "0.16.0-aztec.3"
 
 [dependencies]
 aztec = { git="https://github.com/AztecProtocol/aztec-packages/", tag="aztec-packages-v0.9.0", directory="yarn-project/aztec-nr/aztec" }
