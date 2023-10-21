@@ -9,7 +9,6 @@ import {
     TxStatus,
     Wallet as AztecWallet,
     computeMessageSecretHash,
-    sha256ToField,
     AccountWallet,
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';

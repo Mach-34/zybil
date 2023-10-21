@@ -4,3 +4,4 @@ yarn-error.log
 cache
 contracts/artifacts
 ./contracts/l2/target
+log

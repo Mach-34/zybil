@@ -142,22 +142,22 @@ contract Zybil {
         }
 
         // create stamp
-        let mut stamp = StampNote::new(
-            context.msg_sender(),
-            STAMP_ID::ETHEREUM,
-            0, // does not expire
-            [address, 0, 0]
-        );
-        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        // let mut stamp = StampNote::new(
+        //     context.msg_sender(),
+        //     STAMP_ID::ETHEREUM,
+        //     0, // does not expire
+        //     [address, 0, 0]
+        // );
+        // storage.stamps.at(context.msg_sender()).insert(&mut stamp);
 
-        // emit encrypted log of stamp creation
-        emit_encrypted_log(
-            &mut context,
-            context.this_address(),
-            stamp.header.storage_slot,
-            get_public_key(context.msg_sender()),
-            stamp.serialize()
-        );
+        // // emit encrypted log of stamp creation
+        // emit_encrypted_log(
+        //     &mut context,
+        //     context.this_address(),
+        //     stamp.header.storage_slot,
+        //     get_public_key(context.msg_sender()),
+        //     stamp.serialize()
+        // );
     }
 
     // #[aztec(private)]
