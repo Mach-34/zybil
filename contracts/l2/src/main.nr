@@ -77,16 +77,15 @@ contract Zybil {
     }
 
     #[aztec(private)]
-    fn constructor() {}
-    // fn constructor(signer_x: Field, signer_y: Field) {
+    fn constructor(signer: Pubkey) {
         // Set registered signer
-        // let selector = compute_selector("initialize(Field,Field)");
-        // context.call_public_function(context.this_address(), selector, [signer_x, signer_y]);
+        let selector = compute_selector("initialize(Field,Field)");
+        context.call_public_function(context.this_address(), selector, [signer.x, signer.y]);
         // set the backend address based on the sender
         // setup bridge
         // let selector = compute_selector("_initialize((Field))");
         // context.call_public_function(context.this_address(), selector, )
-    // }
+    }
 
     #[aztec(private)]
     fn stamp_ens(
