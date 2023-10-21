@@ -23,11 +23,9 @@ contract Zybil {
     };
     use dep::std::{
         option::Option,
+        println,
         schnorr
     };
-
-    // Largest possible signed message length
-    global MAX_MSG_LEN = 380;
 
     mod StorageSlots {
         global BACKEND_ID = 1;
@@ -116,7 +114,6 @@ contract Zybil {
     //     assert(valid_signature, "Invalid signature");
 
 
-    //     // TODO: Need to decode data from message
 
     //     let note = StampNote::new(
     //         context.msg_sender(),
@@ -131,11 +128,21 @@ contract Zybil {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
 
-    // #[aztec(private)]
-    // internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
-    //     let Pubkey { x, y } = storage.registered_signer.read();
-    //     schnorr::verify_signature(x, y, signature, msg)
+    // unconstrained fn decode_msg(msg: [u8; MAX_MSG_LEN]) -> u8 {
+    //     let (stamp_type, stamp_data) = msg.pop_front();
+    //     sst
     // }
+
+    unconstrained fn valid_signature(signature: [u8; 64], msg: [Field; 2]) -> bool {
+        let Pubkey { x, y } = storage.registered_signer.read();
+        let mut bytes: [u8; 33] = [0; 33]; 
+        let data = msg[1].to_be_bytes(32);
+        bytes[0] = msg[0] as u8;
+        for i in 0..32 {
+            bytes[i + 1] = data[i];
+        }
+        schnorr::verify_signature(x, y, signature, bytes)
+    }
 
     unconstrained fn registered_signer() -> Pubkey {
         storage.registered_signer.read()

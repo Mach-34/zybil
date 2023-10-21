@@ -5,13 +5,14 @@ import {
     GrumpkinScalar,
     generatePublicKey,
     getSandboxAccountsWallets,
+    FieldLike,
     Point,
     Wallet,
 } from "@aztec/aztec.js";
 import { ContractArtifact } from '@aztec/foundation/abi';
 import { Schnorr } from "@aztec/circuits.js/barretenberg";
 import ZybilContractAbi from '../../contracts/l2/target/Zybil.json' assert {type: 'json'};
-import { objectToUint8Array } from "../src/utils/index.js";
+import { objectToUint8Array, removePadding } from "../src/utils/index.js";
 import { padBytes } from "../src/utils/index.js";
 
 
@@ -30,51 +31,62 @@ const deployContract = async (client: Wallet, pubkey: Point) => {
     ).send().deployed();
 }
 
+// TODO: Change to handle max length email
+const encodeId = (id: string) => {
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(id);
+    return Buffer.from(encoded).toString('hex');
+}
+
 // Hardcode to string for now
-export const encodeVerifiedData = (stampType: number, uuid: string) => {
+const encodeVerifiedData = (stampType: number, id: string) => {
     if (stampType < 1 || stampType > 3) {
         throw new Error('Stamp type needs to be between 1 and 3')
     }
-    // TODO: Check string length
-    const encoder = new TextEncoder();
-    const encodedString = encoder.encode(uuid);
+    // Allow max string length of 63 bytes for now
+    if (id.length > 63) {
+        throw new Error('UUID length exceeds max size')
+    }
+    const encodedId = encodeId(id);
+    return [stampType, encodedId]
+}
 
-    const buffer = new Uint8Array(380);
-    buffer[0] = stampType;
-    buffer.set(encodedString, 1)
-    return buffer
+const msgToBytes = (msg: Array<any>) => {
+    const bytes = new Uint8Array(33);
+    bytes.set(msg[0], 0)
+    bytes.set(Uint8Array.from(msg[1]), 1);
+    return bytes
 }
 
 const generateSignatureAndMsg = async (privkey: GrumpkinScalar) => {
-    // const data = {
-    //     platform: 2,
-    //     record: {
-    //         email: 'test@email.com',
-    //     },
-    //     valid: true,
-    // }
-    // Convert msg to bytes and pad to ensure a length of 380
-    // const msg = padBytes(objectToUint8Array(data));
-    const msg = encodeVerifiedData(2, 'test@gmail.com');
-    const schnorr = await Schnorr.new();
-    const signature = schnorr.constructSignature(msg, privkey);
-    const signatureBytes = new Uint8Array(signature.toBuffer());
-    return { msg: Array.from(msg), signature: Array.from(signatureBytes) }
+    const msg = encodeVerifiedData(2, 'Test@gmail.com');
+    console.log('Msg: ', msg);
+    // const bytes = msgToBytes(msg);
+    // console.log('Bytes: ', bytes);
+    // const schnorr = await Schnorr.new();
+    // const signature = schnorr.constructSignature(bytes, privkey);
+    // const signatureBytes = new Uint8Array(signature.toBuffer());
+    // // @ts-ignore
+    // msg[0] = msg[0] as FieldLike;
+    // // @ts-ignore
+    // msg[1] = Buffer.from(`${msg[1]}`, 'hex') as FieldLike;
+    // return { msg: msg, signature: Array.from(signatureBytes) }
 }
 
 
 async function main() {
-    const pubkey = await generatePublicKey(GrumpkinScalar.fromString(privkey))
-    const client = createPXEClient(sandboxURL);
-    const zybil = await deployContract(client as Wallet, pubkey);
-    const { msg, signature } = await generateSignatureAndMsg(GrumpkinScalar.fromString(privkey));
-    const signer = await zybil.methods.registered_signer().view();
-    console.log('Signer: ', signer);
+    // const pubkey = await generatePublicKey(GrumpkinScalar.fromString(privkey))
+    // const client = createPXEClient(sandboxURL);
+    // const zybil = await deployContract(client as Wallet, pubkey);
+
+
+    await generateSignatureAndMsg(GrumpkinScalar.fromString(privkey));
+
     // const verified = await zybil.methods.valid_signature(
     //     signature,
     //     msg
     // ).view();
-    // console.log('Verified: ', verified);
+    // console.log('Decoded: ', verified);
 }
 
 main()
