@@ -105,8 +105,15 @@ contract Zybil {
         );
     }
 
+    /**
+     * Generate a stamp for an Ethereum address by proving a signature over the sender's Aztec Address
+     *
+     * @param pubkey_x: the X coordinate of the full public key for an secp256k1 key (Ethereum)
+     * @param pubkey_y: the Y coordinate of the full public key for an secp256k1 key (Ethereum)
+     * @param signature: the signature on the sender's aztec address by given pubkey
+     */
     #[aztec(private)]
-    fn stamp_ethkey(pubkey_x: [u8; 32], pubkey_y: [u8; 32], signature: [u8; 64]) -> Field {
+    fn stamp_ethkey(pubkey_x: [u8; 32], pubkey_y: [u8; 32], signature: [u8; 64]) {
         // convert msg.sender to [u8] as message to be signed
         let message = context.msg_sender().to_be_bytes(32);
 
@@ -134,23 +141,23 @@ contract Zybil {
             v *= 256;
         }
 
-        // // create stamp
-        // let mut stamp = StampNote::new(
-        //     context.msg_sender(),
-        //     STAMP_ID::ETHEREUM,
-        //     0, // does not expire
-        //     [address, 0, 0]
-        // );
-        // storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        // create stamp
+        let mut stamp = StampNote::new(
+            context.msg_sender(),
+            STAMP_ID::ETHEREUM,
+            0, // does not expire
+            [address, 0, 0]
+        );
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
 
-        // // emit encrypted log of stamp creation
-        // emit_encrypted_log(
-        //     &mut context,
-        //     context.this_address(),
-        //     stamp.header.storage_slot,
-        //     get_public_key(context.msg_sender()),
-        //     stamp.serialize()
-        // );
+        // emit encrypted log of stamp creation
+        emit_encrypted_log(
+            &mut context,
+            context.this_address(),
+            stamp.header.storage_slot,
+            get_public_key(context.msg_sender()),
+            stamp.serialize()
+        );
     }
 
     // #[aztec(private)]
