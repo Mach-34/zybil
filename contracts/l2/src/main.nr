@@ -23,10 +23,19 @@ contract Zybil {
     };
     use dep::std::{
         option::Option,
+<<<<<<< HEAD
         println,
         schnorr
     };
 
+=======
+        schnorr
+    };
+
+    // Largest possible signed message length
+    global MAX_MSG_LEN = 380;
+
+>>>>>>> 5dd4964108fff624045ebaa1358825cb01ce95d6
     mod StorageSlots {
         global BACKEND_ID = 1;
         global STAMP_TYPE_ID = 2;
@@ -106,6 +115,7 @@ contract Zybil {
         );
     }
 
+<<<<<<< HEAD
     // #[aztec(private)]
     // fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
     //     // Ensure signature is valid before storing stamp
@@ -144,6 +154,37 @@ contract Zybil {
         schnorr::verify_signature(x, y, signature, bytes)
     }
 
+=======
+    #[aztec(private)]
+    fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
+        // Ensure signature is valid before storing stamp
+        let Pubkey { x, y } = storage.registered_signer.read();
+        let valid_signature = schnorr::verify_signature(x, y, signature, msg);
+        assert(valid_signature, "Invalid signature");
+
+
+        // TODO: Need to decode data from message
+
+        let note = StampNote::new(
+            context.msg_sender(),
+            0, // TODO
+            [0, 0, 0]
+        );        
+        note.insert()
+    }
+
+    #[aztec(public)]
+    internal fn initialize(signer_x: Field, signer_y: Field) {
+        storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
+    }
+
+    // #[aztec(private)]
+    // internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
+    //     let Pubkey { x, y } = storage.registered_signer.read();
+    //     schnorr::verify_signature(x, y, signature, msg)
+    // }
+
+>>>>>>> 5dd4964108fff624045ebaa1358825cb01ce95d6
     unconstrained fn registered_signer() -> Pubkey {
         storage.registered_signer.read()
     }

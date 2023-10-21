@@ -86,7 +86,7 @@ async function main() {
     //     signature,
     //     msg
     // ).view();
-    // console.log('Decoded: ', verified);
+    // console.log('Decoded: ', verified);dd4964108fff624045ebaa1358825cb01ce95d6
 }
 
 main()
