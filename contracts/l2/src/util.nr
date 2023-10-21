@@ -1,5 +1,13 @@
 use dep::aztec::hash::sha256_to_field;
 
+mod STAMP_ID {
+    global ETHEREUM: u8 = 1;
+    global ENS: u8 = 2;
+    global GOOGLE: u8 = 3;
+    global DISCORD: u8 = 4;
+    global GITHUB: u8 = 5;
+}
+
 pub fn get_ens_stamp_private_content_hash(
     secret_redemption_hash: Field,
     name: Field,
