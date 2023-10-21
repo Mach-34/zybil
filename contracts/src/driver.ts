@@ -56,9 +56,9 @@ export async function deployAndInitialize(
 
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
-    const deployReceipt = await ZybilContract.deploy(aztecWallet).send({
-        portalContract: EthAddress.fromString(await portal.getAddress()),
-    }).wait();
+    const deployReceipt = await ZybilContract.deploy(aztecWallet, { x: backend.x, y: backend.y})
+        .send({ portalContract: EthAddress.fromString(await portal.getAddress()) })
+        .wait();
 
     // check that the deploy tx is confirmed
     if (deployReceipt.status !== TxStatus.MINED) throw new Error(`Deploy token tx status is ${deployReceipt.status}`);
@@ -193,9 +193,8 @@ export class ZybilDriver {
         const aztecAddress = aztecWallet.getAddress();
         const signature = await ethWallet.signMessage(aztecAddress.toString())
         const serialized = SigningKey.recoverPublicKey( aztecAddress.toString(), signature);
-        console.log("S", aztecAddress.toBuffer().length);
         const inputs = {
-            // slice off 0x (start) and sig_v (end)
+            // slice off sig_v (end)
             signature: hexTou8Array(signature.slice(0, -2)),
             // slice off `0x04` from serialized pubkey
             pubkey: {
@@ -203,9 +202,6 @@ export class ZybilDriver {
                 y: hexTou8Array(serialized.slice(68))
             }
         }
-        console.log("Inputs: ", inputs.signature.length);
-        console.log("Inputs: ", inputs.pubkey.x.length);
-        console.log("Inputs: ", inputs.pubkey.y.length);
         // stamp eth address in L2 Zybil contract
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         const receipt = await instance.methods.stamp_ethkey(
@@ -213,10 +209,8 @@ export class ZybilDriver {
             inputs.pubkey.y,
             inputs.signature
         ).send().wait();
-        console.log("XXX: ", receipt);
         // throw if tx does not mine
         if (receipt.status !== TxStatus.MINED)
             throw new Error(`Failed to stamp Eth Address: ${receipt.status}`);
-        console.log("XXX: ", receipt);
     }
 }

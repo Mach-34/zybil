@@ -28,8 +28,10 @@ contract Zybil {
         },
     };
 
+
     // Largest possible signed message length
     global MAX_MSG_LEN = 380;
+
 
     mod StorageSlots {
         global BACKEND_ID = 1;
@@ -75,16 +77,15 @@ contract Zybil {
     }
 
     #[aztec(private)]
-    fn constructor() {}
-    // fn constructor(signer_x: Field, signer_y: Field) {
+    fn constructor(signer: Pubkey) {
         // Set registered signer
-        // let selector = compute_selector("initialize(Field,Field)");
-        // context.call_public_function(context.this_address(), selector, [signer_x, signer_y]);
+        let selector = compute_selector("initialize(Field,Field)");
+        context.call_public_function(context.this_address(), selector, [signer.x, signer.y]);
         // set the backend address based on the sender
         // setup bridge
         // let selector = compute_selector("_initialize((Field))");
         // context.call_public_function(context.this_address(), selector, )
-    // }
+    }
 
     #[aztec(private)]
     fn stamp_ens(
@@ -161,20 +162,38 @@ contract Zybil {
     }
 
     // #[aztec(private)]
-    // fn stamp_web2() {
-        
-    // }
-
-    // #[aztec(public)]
-    // internal fn initialize(signer_x: Field, signer_y: Field) {
-    //     storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
-    // }
-
-    // #[aztec(public)]
-    // internal fn valid_signature(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) -> bool {
+    // fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
+    //     // Ensure signature is valid before storing stamp
     //     let Pubkey { x, y } = storage.registered_signer.read();
-    //     dep::std::schnorr::verify_signature(x, y, signature, msg)
+    //     let valid_signature = schnorr::verify_signature(x, y, signature, msg);
+    //     assert(valid_signature, "Invalid signature");
+
+
+
+    //     let note = StampNote::new(
+    //         context.msg_sender(),
+    //         0, // TODO
+    //         [0, 0, 0]
+    //     );        
+    //     note.insert()
     // }
+
+
+    unconstrained fn valid_signature(signature: [u8; 64], msg: [Field; 2]) -> bool {
+        let Pubkey { x, y } = storage.registered_signer.read();
+        let mut bytes: [u8; 33] = [0; 33]; 
+        let data = msg[1].to_be_bytes(32);
+        bytes[0] = msg[0] as u8;
+        for i in 0..32 {
+            bytes[i + 1] = data[i];
+        }
+        dep::std::schnorr::verify_signature(x, y, signature, bytes)
+    }
+
+    #[aztec(public)]
+    internal fn initialize(signer_x: Field, signer_y: Field) {
+        storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
+    }
 
     // unconstrained fn registered_signer() -> Pubkey {
     //     storage.registered_signer.read()

@@ -6,29 +6,28 @@ use dep::aztec::note::{
 use dep::aztec::context::PrivateContext;
 use dep::aztec::oracle::get_secret_key::get_secret_key;
 
-global STAMP_SERIALIZED_NOTE_LEN: Field = 6;
+global STAMP_SERIALIZED_NOTE_LEN: Field = 5;
 
 struct StampNote {
     owner: Field,
     // type of stamp
     stamp_type: u8,
     // timestamp of when the stamp was issued
-    timestamp: Field,
+    // timestamp: Field,
     // up to 93 bytes of data
     data: [Field; 3],
     header: NoteHeader
 }
 
 impl StampNote {
-    pub fn new(owner: Field, stamp_type: u8, timestamp: Field, data: [Field; 3]) -> Self {
-        Self { owner, stamp_type, timestamp, data, header: NoteHeader::empty() }
+    fn new(owner: Field, stamp_type: u8, data: [Field; 3]) -> Self {
+        Self { owner, stamp_type, data, header: NoteHeader::empty() }
     }
 
     fn serialize(self) -> [Field; STAMP_SERIALIZED_NOTE_LEN] {
         [
             self.owner,
             self.stamp_type as Field,
-            self.timestamp,
             self.data[0],
             self.data[1],
             self.data[2]
@@ -39,8 +38,7 @@ impl StampNote {
         StampNote {
             owner: preimage[0],
             stamp_type: preimage[1] as u8,
-            timestamp: preimage[2],
-            data: [preimage[3], preimage[4], preimage[5]],
+            data: [preimage[2], preimage[3], preimage[4]],
             header: NoteHeader::empty()
         }
     }

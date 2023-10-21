@@ -41,14 +41,14 @@ export class ZybilContract extends ContractBase {
   /**
    * Creates a tx to deploy a new instance of this contract.
    */
-  public static deploy(pxe: PXE, ) {
+  public static deploy(pxe: PXE, signer: { x: FieldLike, y: FieldLike }) {
     return new DeployMethod<ZybilContract>(Point.ZERO, pxe, ZybilContractArtifact, Array.from(arguments).slice(1));
   }
 
   /**
    * Creates a tx to deploy a new instance of this contract using the specified public key to derive the address.
    */
-  public static deployWithPublicKey(pxe: PXE, publicKey: PublicKey, ) {
+  public static deployWithPublicKey(pxe: PXE, publicKey: PublicKey, signer: { x: FieldLike, y: FieldLike }) {
     return new DeployMethod<ZybilContract>(publicKey, pxe, ZybilContractArtifact, Array.from(arguments).slice(2));
   }
   
@@ -65,10 +65,16 @@ export class ZybilContract extends ContractBase {
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public methods!: {
     
+    /** initialize(signer_x: field, signer_y: field) */
+    initialize: ((signer_x: FieldLike, signer_y: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** stamp_ens(redemption_hash: field, addr: struct, timestamp: field, canceller: struct, msg_key: field, consumption_hash: field) */
     stamp_ens: ((redemption_hash: FieldLike, addr: EthAddressLike, timestamp: FieldLike, canceller: EthAddressLike, msg_key: FieldLike, consumption_hash: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** stamp_ethkey(pubkey_x: array, pubkey_y: array, signature: array) */
     stamp_ethkey: ((pubkey_x: (bigint | number)[], pubkey_y: (bigint | number)[], signature: (bigint | number)[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** valid_signature(signature: array, msg: array) */
+    valid_signature: ((signature: (bigint | number)[], msg: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
   };
 }
