@@ -30,16 +30,32 @@ const deployContract = async (client: Wallet, pubkey: Point) => {
     ).send().deployed();
 }
 
-const generateSignatureAndMsg = async (privkey: GrumpkinScalar) => {
-    const data = {
-        platform: 2,
-        record: {
-            email: 'test@email.com',
-        },
-        valid: true,
+// Hardcode to string for now
+export const encodeVerifiedData = (stampType: number, uuid: string) => {
+    if (stampType < 1 || stampType > 3) {
+        throw new Error('Stamp type needs to be between 1 and 3')
     }
+    // TODO: Check string length
+    const encoder = new TextEncoder();
+    const encodedString = encoder.encode(uuid);
+
+    const buffer = new Uint8Array(380);
+    buffer[0] = stampType;
+    buffer.set(encodedString, 1)
+    return buffer
+}
+
+const generateSignatureAndMsg = async (privkey: GrumpkinScalar) => {
+    // const data = {
+    //     platform: 2,
+    //     record: {
+    //         email: 'test@email.com',
+    //     },
+    //     valid: true,
+    // }
     // Convert msg to bytes and pad to ensure a length of 380
-    const msg = padBytes(objectToUint8Array(data));
+    // const msg = padBytes(objectToUint8Array(data));
+    const msg = encodeVerifiedData(2, 'test@gmail.com');
     const schnorr = await Schnorr.new();
     const signature = schnorr.constructSignature(msg, privkey);
     const signatureBytes = new Uint8Array(signature.toBuffer());
@@ -52,11 +68,13 @@ async function main() {
     const client = createPXEClient(sandboxURL);
     const zybil = await deployContract(client as Wallet, pubkey);
     const { msg, signature } = await generateSignatureAndMsg(GrumpkinScalar.fromString(privkey));
-    const verified = await zybil.methods.valid_signature(
-        signature,
-        msg
-    ).view();
-    console.log('Verified: ', verified);
+    const signer = await zybil.methods.registered_signer().view();
+    console.log('Signer: ', signer);
+    // const verified = await zybil.methods.valid_signature(
+    //     signature,
+    //     msg
+    // ).view();
+    // console.log('Verified: ', verified);
 }
 
 main()

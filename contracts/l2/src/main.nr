@@ -108,23 +108,23 @@ contract Zybil {
         );
     }
 
-    #[aztec(private)]
-    fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
-        // Ensure signature is valid before storing stamp
-        let Pubkey { x, y } = storage.registered_signer.read();
-        let valid_signature = schnorr::verify_signature(x, y, signature, msg);
-        assert(valid_signature, "Invalid signature");
+    // #[aztec(private)]
+    // fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
+    //     // Ensure signature is valid before storing stamp
+    //     let Pubkey { x, y } = storage.registered_signer.read();
+    //     let valid_signature = schnorr::verify_signature(x, y, signature, msg);
+    //     assert(valid_signature, "Invalid signature");
 
 
-        // TODO: Need to decode data from message
+    //     // TODO: Need to decode data from message
 
-        let note = StampNote::new(
-            context.msg_sender(),
-            0, // TODO
-            [0, 0, 0]
-        );        
-        note.insert()
-    }
+    //     let note = StampNote::new(
+    //         context.msg_sender(),
+    //         0, // TODO
+    //         [0, 0, 0]
+    //     );        
+    //     note.insert()
+    // }
 
     #[aztec(public)]
     internal fn initialize(signer_x: Field, signer_y: Field) {
