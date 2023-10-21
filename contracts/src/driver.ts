@@ -10,10 +10,11 @@ import {
     Wallet as AztecWallet,
     computeMessageSecretHash,
     AccountWallet,
+    Contract as AztecContract
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';
-import { Signer, Contract, SigningKey } from 'ethers';
-import { ZybilContract } from './artifacts/l2/Zybil.js';
+import { Signer, Contract as EthContract, SigningKey } from 'ethers';
+import { ZybilContract, ZybilContractArtifact } from './artifacts/l2/Zybil.js';
 import { ENSFactory, PortalFactory } from './artifacts/index.js'
 import { hexTou8Array } from './utils.js';
 
@@ -40,25 +41,27 @@ export async function deployAndInitialize(
     registry: EthAddress,
 ): Promise<{
     zybil: AztecAddress;
-    portal: Contract;
-    ens: Contract;
+    portal: EthContract;
+    ens: EthContract;
 }> {
     // if underlying L1 contract address is not supplied, deploy it
     const ensFactory = ENSFactory.connect(ethWallet);
-    const ens = await ensFactory.deploy() as Contract;
+    const ens = await ensFactory.deploy() as EthContract;
     await ens.waitForDeployment();
 
     // deploy L1 portal contract
     const portalFactory = PortalFactory.connect(ethWallet);
-    const portal = await portalFactory.deploy() as Contract;
+    const portal = await portalFactory.deploy() as EthContract;
     await portal.waitForDeployment();
 
 
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
-    const deployReceipt = await ZybilContract.deploy(aztecWallet, { x: backend.x, y: backend.y})
-        .send({ portalContract: EthAddress.fromString(await portal.getAddress()) })
-        .wait();
+    const deployReceipt = await AztecContract.deploy(
+        aztecWallet,
+        ZybilContractArtifact,
+        [{ x: backend.x, y: backend.y }]
+    ).send().wait();
 
     // check that the deploy tx is confirmed
     if (deployReceipt.status !== TxStatus.MINED) throw new Error(`Deploy token tx status is ${deployReceipt.status}`);
@@ -103,7 +106,7 @@ export class ZybilDriver {
         aztecWallet.getCompleteAddress().address;
         const l1ContractAddresses = (await pxe.getNodeInfo()).l1ContractAddresses;
 
-        const outbox = new Contract(
+        const outbox = new EthContract(
             l1ContractAddresses.outboxAddress.toString(),
             [...OutboxAbi],
             ethWallet
@@ -137,11 +140,11 @@ export class ZybilDriver {
         /** L2 Token contract. */
         public zybil: AztecAddress,
         /** Token portal instance. */
-        public portal: Contract,
+        public portal: EthContract,
         /** Underlying token for portal tests. */
-        public ens: Contract,
+        public ens: EthContract,
         /** Message Bridge Outbox. */
-        public outbox: Contract,
+        public outbox: EthContract,
         /** Backend Address */
         public backend: AztecWallet,
     ) { }
@@ -167,7 +170,7 @@ export class ZybilDriver {
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
     async setENSName(name: string, from: Signer) {
-        const tx = await (this.ens.connect(from) as Contract).set(name);
+        const tx = await (this.ens.connect(from) as EthContract).set(name);
         await tx.wait();
     }
 
@@ -179,7 +182,7 @@ export class ZybilDriver {
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
     async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<Fr> {
-        const tx = await (this.portal.connect(from) as Contract).pushENSToAztec(
+        const tx = await (this.portal.connect(from) as EthContract).pushENSToAztec(
             DEADLINE,
             redemptionHash,
             consumptionHash
