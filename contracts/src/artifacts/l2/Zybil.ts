@@ -13,7 +13,7 @@ export const ZybilContractArtifact = ZybilContractArtifactJson as ContractArtifa
  * Type-safe interface for contract Zybil;
  */
 export class ZybilContract extends ContractBase {
-  
+
   private constructor(
     completeAddress: CompleteAddress,
     wallet: Wallet,
@@ -21,9 +21,9 @@ export class ZybilContract extends ContractBase {
   ) {
     super(completeAddress, ZybilContractArtifact, wallet, portalContract);
   }
-  
 
-  
+
+
   /**
    * Creates a contract instance.
    * @param address - The deployed contract's address.
@@ -37,7 +37,7 @@ export class ZybilContract extends ContractBase {
     return Contract.at(address, ZybilContract.artifact, wallet) as Promise<ZybilContract>;
   }
 
-  
+
   /**
    * Creates a tx to deploy a new instance of this contract.
    */
@@ -51,20 +51,20 @@ export class ZybilContract extends ContractBase {
   public static deployWithPublicKey(pxe: PXE, publicKey: PublicKey, signer: { x: FieldLike, y: FieldLike }) {
     return new DeployMethod<ZybilContract>(publicKey, pxe, ZybilContractArtifact, Array.from(arguments).slice(2));
   }
-  
 
-  
+
+
   /**
    * Returns this contract's artifact.
    */
   public static get artifact(): ContractArtifact {
     return ZybilContractArtifact;
   }
-  
+
 
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public methods!: {
-    
+
     /** initialize(signer_x: field, signer_y: field) */
     initialize: ((signer_x: FieldLike, signer_y: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 

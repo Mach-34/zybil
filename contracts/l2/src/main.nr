@@ -30,7 +30,7 @@ contract Zybil {
 
 
     // Largest possible signed message length
-    global MAX_MSG_LEN = 380;
+    // global MAX_MSG_LEN = 380;
 
 
     mod StorageSlots {
@@ -161,41 +161,34 @@ contract Zybil {
         // );
     }
 
-    // #[aztec(private)]
-    // fn stamp_web2(signature: [u8; 64], msg: [u8; MAX_MSG_LEN]) {
-    //     // Ensure signature is valid before storing stamp
-    //     let Pubkey { x, y } = storage.registered_signer.read();
-    //     let valid_signature = schnorr::verify_signature(x, y, signature, msg);
-    //     assert(valid_signature, "Invalid signature");
+    #[aztec(private)]
+    fn stamp_web2(signature: [u8; 64], msg: [Field; 2]) {
+        // Encode msg to bytes
+        // let encoded_msg = encode_msg(msg);
+        // let Pubkey { x, y } = storage.registered_signer.read();
+        // let valid_signature = dep::std::schnorr::verify_signature(x, y, signature, encoded_msg);
+        // assert(valid_signature, "Signature could not be verified with provided data");
 
+        let mut stamp = StampNote::new(
+            context.msg_sender(),
+            msg[0] as u8,
+            [msg[1], 0, 0]
+        );        
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+    }
 
-
-    //     let note = StampNote::new(
-    //         context.msg_sender(),
-    //         0, // TODO
-    //         [, 0, 0]
-    //     );        
-    //     note.insert()
-    // }
-
-
-    unconstrained fn valid_signature(signature: [u8; 64], msg: [Field; 2]) -> bool {
-        let Pubkey { x, y } = storage.registered_signer.read();
-        let mut bytes: [u8; 33] = [0; 33]; 
-        let data = msg[1].to_be_bytes(32);
-        bytes[0] = msg[0] as u8;
-        for i in 0..32 {
-            bytes[i + 1] = data[i];
-        }
-        dep::std::schnorr::verify_signature(x, y, signature, bytes)
+    unconstrained fn encode_msg(msg: [Field; 2]) -> [u8; 33] {
+            let mut bytes: [u8; 33] = [0; 33]; 
+            let data = msg[1].to_be_bytes(32);
+            bytes[0] = msg[0] as u8;
+            for i in 0..32 {
+                bytes[i + 1] = data[i];
+            }
+            bytes
     }
 
     #[aztec(public)]
     internal fn initialize(signer_x: Field, signer_y: Field) {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
-
-    // unconstrained fn registered_signer() -> Pubkey {
-    //     storage.registered_signer.read()
-    // }
 }
