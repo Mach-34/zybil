@@ -1,11 +1,16 @@
-// mod storage;
 mod types;
 mod util;
 
 contract Zybil {
     use dep::aztec::{
+        constants_gen::{MAX_NOTES_PER_PAGE},
         context::Context,
         hash::compute_secret_hash,
+        note::{
+            note_viewer_options::NoteViewerOptions,
+            note_header::NoteHeader,
+            utils as note_utils
+        },
         selector::compute_selector,
         types::{
             address::{AztecAddress, EthereumAddress},
@@ -27,6 +32,7 @@ contract Zybil {
             STAMP_ID
         },
     };
+    use dep::std::option::Option;
 
 
     // Largest possible signed message length
@@ -161,6 +167,20 @@ contract Zybil {
         // );
     }
 
+    unconstrained fn getScore(owner: AztecAddress) -> StampNote {
+        let options = NoteViewerOptions::new().set_limit(1);
+        let notes = storage.stamps.at(owner.address).view_notes(options);
+        notes[0].unwrap()
+        // let mut sum = 0;
+        // for i in 0..notes.len() {
+        //     if notes[i].is_some() {
+        //         // let stamp = notes[i].unwrap_unchecked();
+        //         sum += 1;
+        //     }
+        // }
+        // sum
+    }
+
     #[aztec(private)]
     fn stamp_web2(signature: [u8; 64], msg: [Field; 2]) {
         // Encode msg to bytes
@@ -168,13 +188,20 @@ contract Zybil {
         // let Pubkey { x, y } = storage.registered_signer.read();
         // let valid_signature = dep::std::schnorr::verify_signature(x, y, signature, encoded_msg);
         // assert(valid_signature, "Signature could not be verified with provided data");
-
         let mut stamp = StampNote::new(
             context.msg_sender(),
             msg[0] as u8,
             [msg[1], 0, 0]
         );        
         storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        
+        emit_encrypted_log(
+            &mut context,
+            context.this_address(),
+            stamp.header.storage_slot,
+            get_public_key(context.msg_sender()),
+            stamp.serialize()
+        );
     }
 
     unconstrained fn encode_msg(msg: [Field; 2]) -> [u8; 33] {
@@ -190,5 +217,10 @@ contract Zybil {
     #[aztec(public)]
     internal fn initialize(signer_x: Field, signer_y: Field) {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
+    }
+
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
+        let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
+        note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
     }
 }

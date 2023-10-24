@@ -2,6 +2,7 @@ import {
     AztecAddress,
     DebugLogger,
     EthAddress,
+    FieldLike,
     Fr,
     NotePreimage,
     PXE,
@@ -56,7 +57,7 @@ export async function deployAndInitialize(
 
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
-    const deployReceipt = await ZybilContract.deploy(aztecWallet, { x: backend.x, y: backend.y})
+    const deployReceipt = await ZybilContract.deploy(aztecWallet, { x: backend.x, y: backend.y })
         .send({ portalContract: EthAddress.fromString(await portal.getAddress()) })
         .wait();
 
@@ -77,7 +78,7 @@ export async function deployAndInitialize(
     await tx.wait();
 
     // return contract addresses
-    return { zybil: zybil.address, portal, ens};
+    return { zybil: zybil.address, portal, ens };
 }
 
 /**
@@ -192,7 +193,7 @@ export class ZybilDriver {
         // generate inputs for eth address verification stamp
         const aztecAddress = aztecWallet.getAddress();
         const signature = await ethWallet.signMessage(aztecAddress.toString())
-        const serialized = SigningKey.recoverPublicKey( aztecAddress.toString(), signature);
+        const serialized = SigningKey.recoverPublicKey(aztecAddress.toString(), signature);
         const inputs = {
             // slice off sig_v (end)
             signature: hexTou8Array(signature.slice(0, -2)),
@@ -212,5 +213,17 @@ export class ZybilDriver {
         // throw if tx does not mine
         if (receipt.status !== TxStatus.MINED)
             throw new Error(`Failed to stamp Eth Address: ${receipt.status}`);
+    }
+
+    async stampWeb2(aztecWallet: AccountWallet, msg: Array<FieldLike>, signature: Uint8Array): Promise<void> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const receipt = await instance.methods.stamp_web2(Array.from(signature), msg).send().wait();
+        console.log('Receipt: ', receipt);
+    }
+
+    async getStampId(aztecWallet: AccountWallet): Promise<void> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const receipt = await instance.methods.getScore(aztecWallet.getAddress()).view();
+        console.log('Receipt: ', receipt);
     }
 }

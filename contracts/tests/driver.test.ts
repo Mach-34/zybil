@@ -15,12 +15,14 @@ import { ZybilContract } from '../src/artifacts/index.js';
 import { ZybilDriver, ClaimSecret } from '../src/driver.js';
 import { sleep } from '@aztec/aztec.js';
 import { Signer, SigningKey, JsonRpcProvider, HDNodeWallet, Mnemonic, } from 'ethers';
-import { ecdsaUncompressedPubkey, ecdsaPubkey } from './utils/index.js';
-
+import { ecdsaUncompressedPubkey, ecdsaPubkey, generateSignatureAndMsg, StampType } from './utils/index.js';
+import dotenv from 'dotenv';
+dotenv.config();
 const {
     PXE_URL = 'http://localhost:8080',
     ETHEREUM_URL = 'http://localhost:8545',
-    MNEMONIC = 'test test test test test test test test test test test junk'
+    MNEMONIC = 'test test test test test test test test test test test junk',
+    GRUMPKIN_PRIV_KEY
 } = process.env;
 
 describe('Zybil', () => {
@@ -69,12 +71,20 @@ describe('Zybil', () => {
         logger("Initialized Test Environment")
     })
 
-    test("Get Ethereum Address Stamp", async () => {
-        await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
+    test("Get Gmail Stamp", async () => {
+        const verifiedData = { stampType: StampType.GOOGLE, id: 'Test@gmail.com' };
+        const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
+        await driver.stampWeb2(aztecUsers.alice, msg, signature);
+
+        await driver.getStampId(aztecUsers.alice);
     });
+
+    // test("Get Ethereum Address Stamp", async () => {
+    //     await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
+    // });
     // test("x", async () => {
     //     console.log("A");
-        
+
     // })
 })
 

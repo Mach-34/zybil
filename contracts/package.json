@@ -9,6 +9,7 @@
     "test": "NODE_NO_WARNINGS=1 node --experimental-vm-modules $(yarn bin jest) --no-cache --runInBand --config jest.integration.config.json"
   },
   "devDependencies": {
+    "@aztec/aztec.js": "0.8.14",
     "@aztec/cli": "0.8.14",
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
