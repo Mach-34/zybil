@@ -3,7 +3,7 @@ import { GrumpkinScalar } from "@aztec/aztec.js";
 // why is this async
 async function main(): Promise<string> {
     const seed = GrumpkinScalar.random();
-    return seed.toString().slice(2);
+    return seed.toString();
 }
 
 main()
