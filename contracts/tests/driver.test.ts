@@ -119,7 +119,7 @@ describe('Zybil', () => {
     // })
 
     test("Keccak", async () => {
-        await driver.getKeccak256(aztecUsers.alice);
+        await driver.getKeccak256(aztecUsers.bob);
     })
 
 

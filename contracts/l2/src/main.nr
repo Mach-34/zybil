@@ -277,32 +277,17 @@ contract Zybil {
     }
 
     unconstrained fn compute_keccak_256(owner: Field) ->  [u8; 32] {
-        // let owner_bytes: [u8] = owner.to_be_bytes(32);
-        // let mut bytes: [u8; 32] = [0; 32];
-        // for i in 0..32 {
-        //      bytes[i] = owner_bytes[i];
-        // }
-        // bytes
-        // let mut bytes1: [u8; 31] = [0; 31];
-        // let mut bytes2: [u8; 31] = [0; 31];
-        // let mut bytes3: [u8; 31] = [0; 31];
-        // for i in 0..31 {
-        //     bytes1[i] = owner_bytes[i];
-        //     bytes2[i + 11 * 1] = owner_bytes[i + 11 * 1];
-        //     bytes3[i + 11 * 2] = owner_bytes[i + 11 * 2];
-        // }
-        // [bytes1, bytes2, bytes3]
-        let bytes = [25, 69, 116, 104, 101, 114, 101, 117, 109,  32,  83, 105, 103, 110, 101, 100,  32,  77, 101, 115, 115,  97, 103, 101,  58,  10,  54,  54,  43, 103, 249,  15,   0, 68,  89,  97, 144, 100,  77, 218, 254, 164,  21,  45, 228, 123, 212, 120,  21,  89,  73,  56,  96, 250, 115, 88, 225, 157, 9,  10];
-        // let mut bytes: [u8; 60] = [0; 60];
-        // let prefix: [u8; 26] = [25,  69, 116, 104, 101, 114, 101, 117, 109,  32,  83, 105, 103, 110, 101, 100,  32,  77, 101, 115, 115, 97, 103, 101,  58,  10];
-        // for i in 0..26 {
-        //     bytes[i] = prefix[i];
-        // }
-        // bytes[26] = 54;
-        // bytes[27] = 54;
-        // for i in 0..32 {
-        //     bytes[i + 28] = owner_bytes[i];
-        // }
+        let owner_bytes: [u8] = owner.to_be_bytes(32);
+        let mut bytes: [u8; 60] = [0; 60];
+        let prefix: [u8; 26] = [25,  69, 116, 104, 101, 114, 101, 117, 109,  32,  83, 105, 103, 110, 101, 100,  32,  77, 101, 115, 115, 97, 103, 101,  58,  10];
+        for i in 0..26 {
+            bytes[i] = prefix[i];
+        }
+        bytes[26] = 51;
+        bytes[27] = 50;
+        for i in 0..32 {
+            bytes[i + 28] = owner_bytes[i];
+        }
         dep::std::hash::keccak256(bytes, 60)
         // bytes
     }
