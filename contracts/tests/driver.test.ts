@@ -119,7 +119,10 @@ describe('Zybil', () => {
     // })
 
     test("Keccak", async () => {
-        await driver.getKeccak256(aztecUsers.alice);
+        let [expectedHash, empiricalHash] = await driver.getKeccak256(aztecUsers.alice);
+        console.log("Expected Hash: ", expectedHash);
+        console.log("Empirical Hash: ", empiricalHash);
+        expect(expectedHash == empiricalHash);
     })
 
 

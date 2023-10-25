@@ -264,46 +264,18 @@ export class ZybilDriver {
         return await instance.methods.get_content_hash(aztecWallet.getAddress(), redemption_hash, name, timestamp, Fr.fromString(ethAddress)).view();
     }
 
-    async getKeccak256(aztecWallet: AccountWallet) {
+    async getKeccak256(aztecWallet: AccountWallet): Promise<[string, string]> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         const aztecAddress = aztecWallet.getAddress();
-        console.log('Aztec address: ', aztecAddress.toString())
         const hashNoir = await instance.methods.compute_keccak_256(aztecAddress).view();
-        console.log('Hash: ', hashMessage(Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')))));
         const msgBytes = Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')));
-        const bytes = [...toUtf8Bytes('\x19Ethereum Signed Message:\n'), ...toUtf8Bytes(aztecAddress.toString().length.toString()), ...msgBytes];
-        console.log('Hash js: ', hashMessage(msgBytes))
-        console.log('Noir hash: ', `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`)
-        // console.log('Bytes js: ', bytes);
-        // console.log('Equal length: ', bytes.length === bytesNoir.length);
-        // console.log('JS len: ', bytes.length);
-        // for (let i = 0; i < bytes.length; i++) {
-        //     if (Number(bytesNoir[i]) !== bytes[i]) {
-        //         console.log('Noir val: ', bytesNoir[i])
-        //         console.log('JS val: ', bytes[i])
-        //         throw Error('Value not equal')
-        //     }
-        // }
-        // const numberArray = hashNoir.map((num: BigInt) => Number(num));
-        // console.log('Hash: ', `0x${Buffer.from(numberArray).toString('hex')}`);
-        // console.log('UTF8: ', toUtf8Bytes(aztecAddress.toString()));
-        // console.log('Owner hex: ', `0x${hashNoir.toString('16')}`)
-        // const hashEthers = hashMessage(aztecAddress.toString());
-
-
-        // const numberArray = hashNoir.map((num: BigInt) => Number(num))
-
-        // const bytes = [...toUtf8Bytes('\x19Ethereum Signed Message:\n'), ...toUtf8Bytes(aztecAddress.toString().length.toString()), ...toUtf8Bytes(aztecAddress.toString())];
-        // console.log('FLAG PREFIX: ', toUtf8Bytes('\x19Ethereum Signed Message:\n'))
-        // console.log('FLAG LENGTH: ', toUtf8Bytes(aztecAddress.toString().length.toString()));
-        // console.log('FLAG MSG: ', toUtf8Bytes(aztecAddress.toString()))
-        //     console.log('Address len: ', aztecAddress.toString().length);
-        //     const prefixBytes = Uint8Array.from(Buffer.from('\x19Ethereum Signed Message:\n'));
-        //     console.log('Prefix bytes: ', prefixBytes);
-        //     const lenBytes = Uint8Array.from(Buffer.from(aztecAddress.toString().length.toString()))
-        //     console.log('Len bytes: ', lenBytes);
-        // console.log('Keccak noir: ', `0x${Buffer.from(Uint8Array.from(numberArray)).toString('hex')}`);
-        // console.log('Hash ethers: ', hashEthers);
-        // }
+        let jsBytes = concat([
+            toUtf8Bytes('\x19Ethereum Signed Message:\n'),
+            toUtf8Bytes(String(msgBytes.length)),
+            msgBytes
+        ])
+        let expectedHash = hashMessage(jsBytes);
+        let empiricalHash = `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`;
+        return [expectedHash, empiricalHash];
     }
 }
