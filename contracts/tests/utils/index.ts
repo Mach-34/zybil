@@ -82,3 +82,9 @@ export async function generateSignatureAndMsg(data: VerifiedWeb2, privkey: strin
     const signature = await signSchnorr(msg, GrumpkinScalar.fromString(privkey));
     return { msg, signature };
 }
+
+export function stringTo32Bytes(val: string) {
+    const stringBuffer = Buffer.from(val);
+    const padding = Buffer.alloc(32 - stringBuffer.length);
+    return Buffer.concat([padding, stringBuffer], 32);
+}

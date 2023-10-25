@@ -13,10 +13,10 @@ import {
     AccountWallet,
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';
-import { Signer, Contract, SigningKey } from 'ethers';
+import { Signer, Contract, SigningKey, computeAddress, hashMessage, toUtf8Bytes, concat } from 'ethers';
 import { ZybilContract } from './artifacts/l2/Zybil.js';
 import { ENSFactory, PortalFactory } from './artifacts/index.js'
-import { hexTou8Array } from './utils.js';
+import { generateAddress, hexTou8Array } from './utils.js';
 
 const DEADLINE = 2 ** 32 - 1; // message expiry deadline
 
@@ -179,21 +179,23 @@ export class ZybilDriver {
      * @param consumptionHash - the hash of a claim secret to use to publish a message on l1 to l2
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
-    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<Object> {
+    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer, name: string,): Promise<Object> {
 
         const tx = await (this.portal.connect(from) as Contract).pushENSToAztec(
             DEADLINE,
+            name,
             redemptionHash.toString(true),
             consumptionHash.toString(true)
         );
         const receipt = await tx.wait();
-
+        console.log('Receipt: ', receipt.logs[1].args);
 
         return {
             key: Fr.fromString(receipt.logs[1].args[0]),
-            // name: Fr.fromString(receipt.logs[1].args[1]),
-            timestamp: Fr.fromString(receipt.logs[1].args[2]),
-            // address: Fr.fromString(receipt.logs[1].args[3]),
+            name: receipt.logs[1].args[1],
+            timestamp: Fr.fromString(receipt.logs[1].args[2].toString()),
+            address: Fr.fromString(receipt.logs[1].args[3]),
+            contentHash: receipt.logs[1].args[4],
         }
     }
 
@@ -205,8 +207,12 @@ export class ZybilDriver {
     async stampEthAddress(aztecWallet: AccountWallet, ethWallet: Signer): Promise<void> {
         // generate inputs for eth address verification stamp
         const aztecAddress = aztecWallet.getAddress();
-        const signature = await ethWallet.signMessage(aztecAddress.toString())
-        const serialized = SigningKey.recoverPublicKey(aztecAddress.toString(), signature);
+        const msg = aztecAddress.toString();
+        const signature = await ethWallet.signMessage(msg)
+        const hashed = hashMessage(msg);
+        const serialized = SigningKey.recoverPublicKey(hashed, signature);
+        const recoveredAddress = computeAddress(serialized);
+        console.log('Recovered address: ', recoveredAddress);
         const inputs = {
             // slice off sig_v (end)
             signature: hexTou8Array(signature.slice(0, -2)),
@@ -221,7 +227,7 @@ export class ZybilDriver {
         const receipt = await instance.methods.stamp_ethkey(
             inputs.pubkey.x,
             inputs.pubkey.y,
-            inputs.signature
+            inputs.signature,
         ).send().wait();
         // throw if tx does not mine
         if (receipt.status !== TxStatus.MINED)
@@ -235,17 +241,52 @@ export class ZybilDriver {
             throw new Error(`Failed to stamp Web2: ${receipt.status}`);
     }
 
-    async getEthAddress(aztecWallet: AccountWallet): Promise<void> {
+    async getEthAddress(aztecWallet: AccountWallet): Promise<BigInt> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         // TODO: Get value from decoded log instead of unconstrained function
-        const val = await instance.methods.getEthAddress(aztecWallet.getAddress()).view();
+        const val = await instance.methods.get_eth_address(aztecWallet.getAddress()).view();
         return val;
     }
 
     async getScore(aztecWallet: AccountWallet): Promise<void> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         // TODO: Get value from decoded log instead of unconstrained function
-        const val = await instance.methods.getScore(aztecWallet.getAddress()).view();
+        const val = await instance.methods.get_score(aztecWallet.getAddress()).view();
         return val;
+    }
+
+    async getContentHash(aztecWallet: AccountWallet, redemption_hash: FieldLike, name: FieldLike, timestamp: FieldLike, ethWallet: Signer) {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const ethAddress = await ethWallet.getAddress();
+        console.log('Name:', name);
+        console.log('Timestamp: ', timestamp);
+        console.log('Eth address: ', Fr.fromString(ethAddress));
+        return await instance.methods.get_content_hash(aztecWallet.getAddress(), redemption_hash, name, timestamp, Fr.fromString(ethAddress)).view();
+    }
+
+    async getKeccak256(aztecWallet: AccountWallet) {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const aztecAddress = aztecWallet.getAddress();
+        console.log('Aztec address: ', aztecAddress.toString())
+        const hashNoir = await instance.methods.compute_keccak_256(aztecAddress).view();
+        console.log('Owner: ', hashNoir);
+        console.log('Owner hex: ', `0x${hashNoir.toString('16')}`)
+        // const hashEthers = hashMessage(aztecAddress.toString());
+
+
+        // const numberArray = hashNoir.map((num: BigInt) => Number(num))
+
+        // const bytes = [...toUtf8Bytes('\x19Ethereum Signed Message:\n'), ...toUtf8Bytes(aztecAddress.toString().length.toString()), ...toUtf8Bytes(aztecAddress.toString())];
+        // console.log('FLAG PREFIX: ', toUtf8Bytes('\x19Ethereum Signed Message:\n'))
+        // console.log('FLAG LENGTH: ', toUtf8Bytes(aztecAddress.toString().length.toString()));
+        // console.log('FLAG MSG: ', toUtf8Bytes(aztecAddress.toString()))
+        //     console.log('Address len: ', aztecAddress.toString().length);
+        //     const prefixBytes = Uint8Array.from(Buffer.from('\x19Ethereum Signed Message:\n'));
+        //     console.log('Prefix bytes: ', prefixBytes);
+        //     const lenBytes = Uint8Array.from(Buffer.from(aztecAddress.toString().length.toString()))
+        //     console.log('Len bytes: ', lenBytes);
+        // console.log('Keccak noir: ', `0x${Buffer.from(Uint8Array.from(numberArray)).toString('hex')}`);
+        // console.log('Hash ethers: ', hashEthers);
+        // }
     }
 }

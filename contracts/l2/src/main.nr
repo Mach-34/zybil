@@ -99,27 +99,58 @@ contract Zybil {
         msg_key: Field,
         consumption_hash: Field,
     ) {
-        // GET THE STORED ETH ADDRESS OUT OF ETHKEY STAMP
-        // use as canceller, will fail if wrong eth address stamped/ provided
-        // Retrieve Eth Address from stamps
-        let address = getEthAddress(context.msg_sender());
-        assert(address != 0, "Address is not zero");
+        // Retrieve Eth Address from stamps. Use as canceller, will fail if wrong eth address stamped/ provided
+        let address = get_eth_address(context.msg_sender());
+
         // consume L1 to L2 and emit nullifier
-        // todo: fix inputs
-        // let content_hash = get_ens_stamp_private_content_hash(
-        //     redemption_hash,
-        //     addr.address,
-        //     timestamp,
-        //     canceller.address
-        // );
+        let content_hash = get_ens_stamp_private_content_hash(
+            redemption_hash,
+            name,
+            timestamp,
+            address
+        );
 
         // https://docs.aztec.network/dev_docs/tutorials/token_portal/minting_on_aztec#private-flow
-        // do (context.consume_l1_to_l2_message(msg_key, content_hash, secret_for_L1_to_L2_message_consumption);)
         // CONSUME L1 MESSAGE TO L2
-
+        // What is msg key?
+        // Is the secret the redemption? Harcoding to zero for now
+        // context.consume_l1_to_l2_message(msg_key, content_hash, 0);
         // CREATE NEW ENS STAMP AND STORE IN SET
         
+        let mut stamp = StampNote::new(
+            context.msg_sender(),
+            STAMP_ID::ENS,
+            name
+        );      
         // EMIT ENCRYPTED LOG OF STAMP CREATION
+        emit_encrypted_log(
+            &mut context,
+            context.this_address(),
+            stamp.header.storage_slot,
+            get_public_key(context.msg_sender()),
+            stamp.serialize()
+        );
+    }
+
+    unconstrained fn get_content_hash(
+        owner: Field,
+        redemption_hash: Field,
+        name: Field,
+        timestamp: Field,
+        address: Field,
+    ) -> Field {
+        // Retrieve Eth Address from stamps. Use as canceller, will fail if wrong eth address stamped/ provided
+        // let address = get_eth_address(owner);
+
+        // consume L1 to L2 and emit nullifier
+        let content_hash = get_ens_stamp_private_content_hash(
+            redemption_hash,
+            name,
+            timestamp,
+            address
+        );
+
+        content_hash
     }
 
     /**
@@ -132,8 +163,8 @@ contract Zybil {
     #[aztec(private)]
     fn stamp_ethkey(pubkey_x: [u8; 32], pubkey_y: [u8; 32], signature: [u8; 64]) {
         // convert msg.sender to [u8] as message to be signed
-        let message = context.msg_sender().to_be_bytes(32);
-
+        // let message = context.msg_sender().to_be_bytes(32);
+        let message = dep::std::hash::keccak256(context.msg_sender().to_be_bytes(32), 32);
         // check signature
         let valid_signature = dep::std::ecdsa_secp256k1::verify_signature(
             pubkey_x,
@@ -176,7 +207,7 @@ contract Zybil {
         );
     }
 
-   unconstrained fn getEthAddress(owner: Field) -> Field {
+   unconstrained fn get_eth_address(owner: Field) -> Field {
         let mut address = 0; 
         let options = NoteViewerOptions::new().set_offset(0);
         let notes = storage.stamps.at(owner).view_notes(options);
@@ -188,7 +219,7 @@ contract Zybil {
         address
     }
 
-    unconstrained fn getScore(owner: AztecAddress) -> u120 {
+    unconstrained fn get_score(owner: AztecAddress) -> u120 {
         let options = NoteViewerOptions::new().set_offset(0);
         let notes = storage.stamps.at(owner.address).view_notes(options);
         let mut sum = 0;
@@ -243,5 +274,29 @@ contract Zybil {
     unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
         let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
         note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
+    }
+
+    unconstrained fn compute_keccak_256(owner: Field) ->  [[u8; 31]; 3] {
+        let owner_bytes = owner.to_be_bytes(66);
+        let mut bytes1: [u8; 31] = [0; 31];
+        let mut bytes2: [u8; 31] = [0; 31];
+        let mut bytes3: [u8; 31] = [0; 31];
+        for i in 0..31 {
+            bytes1[i] = owner_bytes[i];
+            bytes2[i + 11 * 1] = owner_bytes[i + 11 * 1];
+            bytes3[i + 11 * 2] = owner_bytes[i + 11 * 2];
+        }
+        [bytes1, bytes2, bytes3]
+        // let mut bytes: [u8; 94] = [0; 94];
+        // let prefix: [u8; 26] = [25,  69, 116, 104, 101, 114, 101, 117, 109,  32,  83, 105, 103, 110, 101, 100,  32,  77, 101, 115, 115, 97, 103, 101,  58,  10];
+        // for i in 0..26 {
+        //     bytes[i] = prefix[i];
+        // }
+        // bytes[26] = 54;
+        // bytes[27] = 54;
+        // for i in 0..66 {
+        //     bytes[i + 28] = owner_bytes[i];
+        // }
+        // dep::std::hash::keccak256(bytes, 94)
     }
 }

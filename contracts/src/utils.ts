@@ -1,3 +1,5 @@
+import { keccak256 } from 'ethers';
+
 /**
  * Sleep for a given number of milliseconds.
  * 
@@ -18,4 +20,10 @@ export function hexTou8Array(hex: string): number[] {
     hex = hex.startsWith("0x") ? hex.slice(2) : hex;
     // convert hex string to number[]
     return Array.from(Uint8Array.from(Buffer.from(hex, "hex")));
+}
+
+export async function generateAddress(x: string, y: string) {
+    const publicKey = `0x${x}${y}`;
+    const address = keccak256(publicKey);
+    console.log('Address: ', address);
 }

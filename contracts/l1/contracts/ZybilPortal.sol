@@ -12,7 +12,8 @@ contract ZybilPortal {
         bytes32 _key,
         bytes32 _name,
         uint256 _timestamp,
-        address _address
+        address _address,
+        bytes32 _contentHash
     );
 
     IRegistry public registry;
@@ -43,6 +44,7 @@ contract ZybilPortal {
      */
     function pushENSToAztec(
         uint32 _deadline,
+        bytes32 _name,
         bytes32 _redemptionHash,
         bytes32 _consumptionHash
     ) external payable returns (bytes32 _key) {
@@ -54,15 +56,15 @@ contract ZybilPortal {
         );
 
         // get ens data
-        (string memory name, uint256 timestamp) = getENSRecordAge(msg.sender);
+        (, uint256 timestamp) = getENSRecordAge(msg.sender);
 
         // Hash message content to be reconstructed in the receiving contract
-        bytes32 nameBytes = bytes32(bytes(name));
+        // bytes32 nameBytes = bytes32(bytes(name));
         bytes32 contentHash = Hash.sha256ToField(
             abi.encodeWithSignature(
                 "stamp_ens(bytes32,bytes32,uint256,address)",
                 _redemptionHash,
-                nameBytes,
+                _name,
                 timestamp,
                 msg.sender
             )
@@ -77,7 +79,7 @@ contract ZybilPortal {
         );
 
         // Emit event to retrieve from L2
-        emit L2Message(_key, nameBytes, timestamp, msg.sender);
+        emit L2Message(_key, _name, timestamp, msg.sender, contentHash);
     }
 
     function getENSRecordAge(
