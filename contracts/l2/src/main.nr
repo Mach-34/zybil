@@ -164,7 +164,7 @@ contract Zybil {
             STAMP_ID::ETHEREUM,
             address
         );
-        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp, false);
 
         // emit encrypted log of stamp creation
         emit_encrypted_log(
@@ -214,7 +214,7 @@ contract Zybil {
             msg[0] as u8,
             msg[1]
         );        
-        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp, false);
         
         emit_encrypted_log(
             &mut context,

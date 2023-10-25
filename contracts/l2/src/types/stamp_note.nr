@@ -1,9 +1,16 @@
-use dep::aztec::note::{
-    note_header::NoteHeader,
-    note_interface::NoteInterface,
-    utils::compute_siloed_note_hash,
+use dep::aztec::{
+    context::PrivateContext,
+    log::emit_encrypted_log,
+    note::{
+        note_header::NoteHeader,
+        note_interface::NoteInterface,
+        utils::compute_note_hash_for_read_or_nullify,
+    },
+    oracle::{
+        get_secret_key::get_secret_key,
+        get_public_key::get_public_key,
+    }
 };
-use dep::aztec::oracle::get_secret_key::get_secret_key;
 
 global STAMP_SERIALIZED_NOTE_LEN: Field = 3;
 
@@ -44,7 +51,7 @@ impl StampNote {
     }
 
     fn compute_nullifier(self) -> Field {
-        let siloed_note_hash = compute_siloed_note_hash(StampNoteMethods, self);
+        let siloed_note_hash = compute_note_hash_for_read_or_nullify(StampNoteMethods, self);
         let secret = get_secret_key(self.owner);
         dep::std::hash::pedersen([
             siloed_note_hash,
@@ -55,6 +62,18 @@ impl StampNote {
 
     fn set_header(&mut self, header: NoteHeader) {
         self.header = header;
+    }
+
+    // Broadcasts the note as an encrypted log on L1.
+    pub fn broadcast(self, context: &mut PrivateContext, slot: Field) {
+        let encryption_pub_key = get_public_key(self.owner);
+        emit_encrypted_log(
+            context,
+            (*context).this_address(),
+            slot,
+            encryption_pub_key,
+            self.serialize(),
+        );
     }
 }
 
@@ -82,11 +101,16 @@ fn set_header(note: &mut StampNote, header: NoteHeader) {
     note.set_header(header)
 }
 
+fn broadcast(context: &mut PrivateContext, slot: Field, note: StampNote) {
+    note.broadcast(context, slot);
+}
+
 global StampNoteMethods = NoteInterface {
     deserialize,
     serialize,
     compute_note_hash,
     compute_nullifier,
     get_header,
-    set_header
+    set_header,
+    broadcast
 };
