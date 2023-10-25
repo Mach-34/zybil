@@ -9,9 +9,11 @@ export type ecdsaPubkey = {
 }
 
 export enum StampType {
-    GITHUB = 1,
-    GOOGLE = 2,
-    DISCORD = 3
+    ETHEREUM = 0,
+    ENS,
+    GOOGLE,
+    DISCORD,
+    GITHUB,
 }
 
 // Verified web2 oauth data

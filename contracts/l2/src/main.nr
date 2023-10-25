@@ -29,15 +29,13 @@ contract Zybil {
         },
         util::{
             get_ens_stamp_private_content_hash,
+            filter_eth_address_stamp,
             STAMP_ID
         },
     };
     use dep::std::option::Option;
 
-
-    // Largest possible signed message length
-    // global MAX_MSG_LEN = 380;
-
+    global STAMP_SCORES = [7, 12, 4, 2, 15];
 
     mod StorageSlots {
         global BACKEND_ID = 1;
@@ -96,20 +94,32 @@ contract Zybil {
     #[aztec(private)]
     fn stamp_ens(
         redemption_hash: Field,
-        addr: EthereumAddress,
+        name: Field,
         timestamp: Field,
-        canceller: EthereumAddress,
         msg_key: Field,
         consumption_hash: Field,
     ) {
-        // todo: constrain to make sure user has proven ownership of eth address
+        // GET THE STORED ETH ADDRESS OUT OF ETHKEY STAMP
+        // use as canceller, will fail if wrong eth address stamped/ provided
+        // Retrieve Eth Address from stamps
+        let address = getEthAddress(context.msg_sender());
+        assert(address != 0, "Address is not zero");
         // consume L1 to L2 and emit nullifier
-        let content_hash = get_ens_stamp_private_content_hash(
-            redemption_hash,
-            addr.address,
-            timestamp,
-            canceller.address
-        );
+        // todo: fix inputs
+        // let content_hash = get_ens_stamp_private_content_hash(
+        //     redemption_hash,
+        //     addr.address,
+        //     timestamp,
+        //     canceller.address
+        // );
+
+        // https://docs.aztec.network/dev_docs/tutorials/token_portal/minting_on_aztec#private-flow
+        // do (context.consume_l1_to_l2_message(msg_key, content_hash, secret_for_L1_to_L2_message_consumption);)
+        // CONSUME L1 MESSAGE TO L2
+
+        // CREATE NEW ENS STAMP AND STORE IN SET
+        
+        // EMIT ENCRYPTED LOG OF STAMP CREATION
     }
 
     /**
@@ -149,38 +159,49 @@ contract Zybil {
         }
 
         // create stamp
-        // let mut stamp = StampNote::new(
-        //     context.msg_sender(),
-        //     STAMP_ID::ETHEREUM,
-        //     0, // does not expire
-        //     [address, 0, 0]
-        // );
-        // storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        let mut stamp = StampNote::new(
+            context.msg_sender(),
+            STAMP_ID::ETHEREUM,
+            address
+        );
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
 
-        // // emit encrypted log of stamp creation
-        // emit_encrypted_log(
-        //     &mut context,
-        //     context.this_address(),
-        //     stamp.header.storage_slot,
-        //     get_public_key(context.msg_sender()),
-        //     stamp.serialize()
-        // );
+        // emit encrypted log of stamp creation
+        emit_encrypted_log(
+            &mut context,
+            context.this_address(),
+            stamp.header.storage_slot,
+            get_public_key(context.msg_sender()),
+            stamp.serialize()
+        );
     }
 
-    unconstrained fn getScore(owner: AztecAddress) -> StampNote {
-        let options = NoteViewerOptions::new().set_limit(1);
+   unconstrained fn getEthAddress(owner: Field) -> Field {
+        let mut address = 0; 
+        let options = NoteViewerOptions::new().set_offset(0);
+        let notes = storage.stamps.at(owner).view_notes(options);
+        let filtered = filter_eth_address_stamp(notes);
+        if filtered[0].is_some() {
+            let stamp = filtered[0].unwrap_unchecked();
+            address = stamp.data;
+        }
+        address
+    }
+
+    unconstrained fn getScore(owner: AztecAddress) -> u120 {
+        let options = NoteViewerOptions::new().set_offset(0);
         let notes = storage.stamps.at(owner.address).view_notes(options);
-        notes[0].unwrap()
-        // let mut sum = 0;
-        // for i in 0..notes.len() {
-        //     if notes[i].is_some() {
-        //         // let stamp = notes[i].unwrap_unchecked();
-        //         sum += 1;
-        //     }
-        // }
-        // sum
+        let mut sum = 0;
+        for i in 0..notes.len() {
+            if notes[i].is_some() {
+                let stamp = notes[i].unwrap_unchecked();
+                sum += STAMP_SCORES[stamp.stamp_type];
+            }
+        }
+        sum
     }
 
+    // TODO: Need to nullify stamps 
     #[aztec(private)]
     fn stamp_web2(signature: [u8; 64], msg: [Field; 2]) {
         // Encode msg to bytes
@@ -191,7 +212,7 @@ contract Zybil {
         let mut stamp = StampNote::new(
             context.msg_sender(),
             msg[0] as u8,
-            [msg[1], 0, 0]
+            msg[1]
         );        
         storage.stamps.at(context.msg_sender()).insert(&mut stamp);
         

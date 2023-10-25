@@ -5,7 +5,7 @@ use dep::aztec::note::{
 };
 use dep::aztec::oracle::get_secret_key::get_secret_key;
 
-global STAMP_SERIALIZED_NOTE_LEN: Field = 5;
+global STAMP_SERIALIZED_NOTE_LEN: Field = 3;
 
 struct StampNote {
     owner: Field,
@@ -13,13 +13,12 @@ struct StampNote {
     stamp_type: u8,
     // timestamp of when the stamp was issued
     // timestamp: Field,
-    // up to 93 bytes of data
     data: Field,
     header: NoteHeader
 }
 
 impl StampNote {
-    fn new(owner: Field, stamp_type: u8, data: [Field; 3]) -> Self {
+    pub fn new(owner: Field, stamp_type: u8, data: Field) -> Self {
         Self { owner, stamp_type, data, header: NoteHeader::empty() }
     }
 
@@ -27,9 +26,7 @@ impl StampNote {
         [
             self.owner,
             self.stamp_type as Field,
-            self.data[0],
-            self.data[1],
-            self.data[2]
+            self.data,
         ]
     }
 
@@ -37,7 +34,7 @@ impl StampNote {
         StampNote {
             owner: preimage[0],
             stamp_type: preimage[1] as u8,
-            data: [preimage[2], preimage[3], preimage[4]],
+            data: preimage[2],
             header: NoteHeader::empty()
         }
     }

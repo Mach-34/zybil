@@ -167,8 +167,8 @@ export class ZybilDriver {
      * @param name - the name to set for the signer
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
-    async setENSName(name: string, from: Signer) {
-        const tx = await (this.ens.connect(from) as Contract).set(name);
+    async setENSName(name: string, from: Signer): Promise<void> {
+        const tx = await (this.ens.connect(from) as Contract)['set(string,address)'](name, await from.getAddress());
         await tx.wait();
     }
 
@@ -179,14 +179,27 @@ export class ZybilDriver {
      * @param consumptionHash - the hash of a claim secret to use to publish a message on l1 to l2
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
-    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<Fr> {
+    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<Object> {
+
         const tx = await (this.portal.connect(from) as Contract).pushENSToAztec(
             DEADLINE,
-            redemptionHash,
-            consumptionHash
+            redemptionHash.toString(true),
+            consumptionHash.toString(true)
         );
         const receipt = await tx.wait();
-        return Fr.fromString(receipt.logs[0].args[0]);
+
+
+        return {
+            key: Fr.fromString(receipt.logs[1].args[0]),
+            // name: Fr.fromString(receipt.logs[1].args[1]),
+            timestamp: Fr.fromString(receipt.logs[1].args[2]),
+            // address: Fr.fromString(receipt.logs[1].args[3]),
+        }
+    }
+
+    async stampENS(aztecWallet: AccountWallet): Promise<void> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        await instance.methods.stamp_ens(0, 0, 0, 0, 0).send().wait();
     }
 
     async stampEthAddress(aztecWallet: AccountWallet, ethWallet: Signer): Promise<void> {
@@ -218,12 +231,21 @@ export class ZybilDriver {
     async stampWeb2(aztecWallet: AccountWallet, msg: Array<FieldLike>, signature: Uint8Array): Promise<void> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         const receipt = await instance.methods.stamp_web2(Array.from(signature), msg).send().wait();
-        console.log('Receipt: ', receipt);
+        if (receipt.status !== TxStatus.MINED)
+            throw new Error(`Failed to stamp Web2: ${receipt.status}`);
     }
 
-    async getStampId(aztecWallet: AccountWallet): Promise<void> {
+    async getEthAddress(aztecWallet: AccountWallet): Promise<void> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
-        const receipt = await instance.methods.getScore(aztecWallet.getAddress()).view();
-        console.log('Receipt: ', receipt);
+        // TODO: Get value from decoded log instead of unconstrained function
+        const val = await instance.methods.getEthAddress(aztecWallet.getAddress()).view();
+        return val;
+    }
+
+    async getScore(aztecWallet: AccountWallet): Promise<void> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        // TODO: Get value from decoded log instead of unconstrained function
+        const val = await instance.methods.getScore(aztecWallet.getAddress()).view();
+        return val;
     }
 }

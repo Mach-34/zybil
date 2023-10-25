@@ -8,7 +8,12 @@ import {Hash} from "@aztec/l1-contracts/src/core/libraries/Hash.sol";
 import {ToyENS, Record} from "./ToyENS.sol";
 
 contract ZybilPortal {
-    event L2Message(bytes32 _key);
+    event L2Message(
+        bytes32 _key,
+        bytes32 _name,
+        uint256 _timestamp,
+        address _address
+    );
 
     IRegistry public registry;
     ToyENS public underlying;
@@ -52,11 +57,12 @@ contract ZybilPortal {
         (string memory name, uint256 timestamp) = getENSRecordAge(msg.sender);
 
         // Hash message content to be reconstructed in the receiving contract
+        bytes32 nameBytes = bytes32(bytes(name));
         bytes32 contentHash = Hash.sha256ToField(
             abi.encodeWithSignature(
                 "stamp_ens(bytes32,bytes32,uint256,address)",
                 _redemptionHash,
-                bytes32(bytes(name)),
+                nameBytes,
                 timestamp,
                 msg.sender
             )
@@ -69,9 +75,9 @@ contract ZybilPortal {
             contentHash,
             _consumptionHash
         );
-        
+
         // Emit event to retrieve from L2
-        emit L2Message(_key);
+        emit L2Message(_key, nameBytes, timestamp, msg.sender);
     }
 
     function getENSRecordAge(
