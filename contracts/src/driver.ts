@@ -179,11 +179,10 @@ export class ZybilDriver {
      * @param consumptionHash - the hash of a claim secret to use to publish a message on l1 to l2
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
-    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer, name: string,): Promise<Object> {
+    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<Object> {
 
         const tx = await (this.portal.connect(from) as Contract).pushENSToAztec(
             DEADLINE,
-            name,
             redemptionHash.toString(true),
             consumptionHash.toString(true)
         );
@@ -264,13 +263,13 @@ export class ZybilDriver {
         return await instance.methods.get_content_hash(aztecWallet.getAddress(), redemption_hash, name, timestamp, Fr.fromString(ethAddress)).view();
     }
 
-    async getKeccak256(aztecWallet: AccountWallet) {
-        const instance = await ZybilContract.at(this.zybil, aztecWallet);
-        const aztecAddress = aztecWallet.getAddress();
-        const hashNoir = await instance.methods.compute_keccak_256(aztecAddress).view();
-        const msgBytes = Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')));
-        const ethersHash = hashMessage(msgBytes);
-        const noirHash = `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`;
-        console.log('Equal: ', ethersHash === noirHash);
-    }
+    // async getKeccak256(aztecWallet: AccountWallet): Promise<string, string> {
+    //     const instance = await ZybilContract.at(this.zybil, aztecWallet);
+    //     const aztecAddress = aztecWallet.getAddress();
+    //     const hashNoir = await instance.methods.compute_keccak_256(aztecAddress).view();
+    //     const msgBytes = Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')));
+    //     const ethersHash = hashMessage(msgBytes);
+    //     const noirHash = `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`;
+    //     return [ethersHash, noirHash]
+    // }
 }

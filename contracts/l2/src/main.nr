@@ -271,24 +271,39 @@ contract Zybil {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
 
-    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
-        let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
-        note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
-    }
 
-    unconstrained fn compute_keccak_256(owner: Field) ->  [u8; 32] {
+    unconstrained fn format_eth_msg(owner: Field) ->  [u8; 32] {
+        // decompose owner into 8 bit limbs in big endian
         let owner_bytes: [u8] = owner.to_be_bytes(32);
+
+        // construct full message preimage
         let mut bytes: [u8; 60] = [0; 60];
+        // prefix = "\x19Ethereum Signed Message:\n"
         let prefix: [u8; 26] = [25,  69, 116, 104, 101, 114, 101, 117, 109,  32,  83, 105, 103, 110, 101, 100,  32,  77, 101, 115, 115, 97, 103, 101,  58,  10];
         for i in 0..26 {
             bytes[i] = prefix[i];
         }
+
         bytes[26] = 51;
         bytes[27] = 50;
         for i in 0..32 {
             bytes[i + 28] = owner_bytes[i];
         }
+
+        // length of message 
+        bytes[26] = 51;
+        bytes[27] = 50;
+        // message
+        for i in 0..32 {
+            bytes[i + 28] = owner_bytes[i];
+        }
+
+        // return the keccak hash of message
         dep::std::hash::keccak256(bytes, 60)
-        // bytes
+    }
+
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
+        let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
+        note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
     }
 }

@@ -101,26 +101,33 @@ describe('Zybil', () => {
     //     // expect(score).toEqual(28);
     // });
 
-    // test("Insert ENS Stamp", async () => {
-    //     const ens = 'ens.eth';
-    //     // await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
-    //     await driver.setENSName(ens, ethUsers.alice);
-    //     // Generate consumption and remdemption has
-    //     const { hash: consumptionHash, secret: consumptionSecret } = await driver.generateClaimSecret();
-    //     const { hash: redemptionHash, secret: redemptionSecret } = await driver.generateClaimSecret();
-    //     const bytes = `0x${stringTo32Bytes(ens).toString('hex')}`;
-    //     // @ts-ignore
-    //     const { contentHash, name, timestamp } = await driver.pushENStoAztec(redemptionHash, consumptionHash, ethUsers.alice, bytes);
-    //     // Clain ENS ownership on L2
-    //     const noirComputedHash = await driver.getContentHash(aztecUsers.alice, redemptionHash, Buffer.from(name.slice(2), 'hex'), timestamp, ethUsers.alice);
-    //     console.log('Content hash: ', contentHash);
-    //     console.log('Noir computed hash: ', `0x${noirComputedHash.toString(16)}`);
-    //     // await driver.stampENS(aztecUsers.alice);
-    // })
+    test("Insert ENS Stamp", async () => {
 
-    test("Keccak", async () => {
-        await driver.getKeccak256(aztecUsers.bob);
+        // Stamp eth address
+        await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
+
+        const ens = '0';
+        await driver.setENSName(ens, ethUsers.alice);
+        // Generate consumption and remdemption has
+        const { hash: consumptionHash } = await driver.generateClaimSecret();
+        const { hash: redemptionHash } = await driver.generateClaimSecret();
+        // const bytes = `0x${stringTo32Bytes(ens).toString('hex')}`;
+        // @ts-ignore
+        const { contentHash, name, timestamp } = await driver.pushENStoAztec(redemptionHash, consumptionHash, ethUsers.alice);
+        //     // Clain ENS ownership on L2
+        const noirComputedHash = await driver.getContentHash(aztecUsers.alice, redemptionHash, Buffer.from(name.slice(2), 'hex'), timestamp, ethUsers.alice);
+        console.log('Content hash: ', contentHash);
+        console.log('Noir computed hash: ', `0x${noirComputedHash.toString(16)}`);
+        //     // await driver.stampENS(aztecUsers.alice);
     })
+
+    // test("Keccak", async () => {
+    //     await driver.getKeccak256(aztecUsers.bob);
+    //     let [expectedHash, empiricalHash] = await driver.getKeccak256(aztecUsers.alice);
+    //     console.log("Expected Hash: ", expectedHash);
+    //     console.log("Empirical Hash: ", empiricalHash);
+    //     expect(expectedHash === empiricalHash);
+    // })
 
 
     // test("x", async () => {
