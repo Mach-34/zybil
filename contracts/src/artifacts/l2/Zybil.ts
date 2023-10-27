@@ -79,17 +79,14 @@ export class ZybilContract extends ContractBase {
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public methods!: {
     
-    /** compute_keccak_256(owner: field) */
-    compute_keccak_256: ((owner: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** compute_note_hash_and_nullifier(contract_address: field, nonce: field, storage_slot: field, preimage: array) */
     compute_note_hash_and_nullifier: ((contract_address: FieldLike, nonce: FieldLike, storage_slot: FieldLike, preimage: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** encode_msg(msg: array) */
     encode_msg: ((msg: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_content_hash(owner: field, redemption_hash: field, name: field, timestamp: field, address: field) */
-    get_content_hash: ((owner: FieldLike, redemption_hash: FieldLike, name: FieldLike, timestamp: FieldLike, address: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** format_eth_msg(owner: field) */
+    format_eth_msg: ((owner: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** get_eth_address(owner: field) */
     get_eth_address: ((owner: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -100,8 +97,8 @@ export class ZybilContract extends ContractBase {
     /** initialize(signer_x: field, signer_y: field) */
     initialize: ((signer_x: FieldLike, signer_y: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** stamp_ens(redemption_hash: field, name: field, timestamp: field, msg_key: field, consumption_hash: field) */
-    stamp_ens: ((redemption_hash: FieldLike, name: FieldLike, timestamp: FieldLike, msg_key: FieldLike, consumption_hash: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** stamp_ens(redemption_hash: field, name: field, timestamp: field, msg_key: field, consumption_secret: field) */
+    stamp_ens: ((redemption_hash: FieldLike, name: FieldLike, timestamp: FieldLike, msg_key: FieldLike, consumption_secret: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** stamp_ethkey(pubkey_x: array, pubkey_y: array, signature: array) */
     stamp_ethkey: ((pubkey_x: (bigint | number)[], pubkey_y: (bigint | number)[], signature: (bigint | number)[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

@@ -179,39 +179,34 @@ export class ZybilDriver {
      * @param consumptionHash - the hash of a claim secret to use to publish a message on l1 to l2
      * @param from - the signer with provider to use to broadcast the l1 transaction
      */
-    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<Object> {
-
+    async pushENStoAztec(redemptionHash: Fr, consumptionHash: Fr, from: Signer): Promise<{ msgKey: Fr, name: Fr, timestamp: FieldLike }> {
         const tx = await (this.portal.connect(from) as Contract).pushENSToAztec(
             DEADLINE,
             redemptionHash.toString(true),
-            consumptionHash.toString(true)
+            consumptionHash.toString(true),
         );
         const receipt = await tx.wait();
-        console.log('Receipt: ', receipt.logs[1].args);
 
         return {
-            key: Fr.fromString(receipt.logs[1].args[0]),
-            name: receipt.logs[1].args[1],
-            timestamp: Fr.fromString(receipt.logs[1].args[2].toString()),
-            address: Fr.fromString(receipt.logs[1].args[3]),
-            contentHash: receipt.logs[1].args[4],
+            msgKey: Fr.fromString(receipt.logs[1].args[0]),
+            name: Fr.fromString(receipt.logs[1].args[1]),
+            timestamp: receipt.logs[1].args[2],
         }
     }
 
-    async stampENS(aztecWallet: AccountWallet): Promise<void> {
+    async stampENS(aztecWallet: AccountWallet, redemption_hash: FieldLike, name: FieldLike, timestamp: FieldLike, msgKey: FieldLike, secret: FieldLike): Promise<void> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
-        await instance.methods.stamp_ens(0, 0, 0, 0, 0).send().wait();
+        await instance.methods.stamp_ens(redemption_hash, name, timestamp, msgKey, secret).send().wait();
     }
 
     async stampEthAddress(aztecWallet: AccountWallet, ethWallet: Signer): Promise<void> {
         // generate inputs for eth address verification stamp
         const aztecAddress = aztecWallet.getAddress();
-        const msg = aztecAddress.toString();
+        // msg must be converted to Uint8 to be properly hashed
+        const msg = Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')));
         const signature = await ethWallet.signMessage(msg)
-        const hashed = hashMessage(msg);
-        const serialized = SigningKey.recoverPublicKey(hashed, signature);
-        const recoveredAddress = computeAddress(serialized);
-        console.log('Recovered address: ', recoveredAddress);
+        // message must be hashed with keccak256 to be recovered from signature
+        const serialized = SigningKey.recoverPublicKey(hashMessage(msg), signature);
         const inputs = {
             // slice off sig_v (end)
             signature: hexTou8Array(signature.slice(0, -2)),
@@ -254,22 +249,13 @@ export class ZybilDriver {
         return val;
     }
 
-    async getContentHash(aztecWallet: AccountWallet, redemption_hash: FieldLike, name: FieldLike, timestamp: FieldLike, ethWallet: Signer) {
+    async getKeccak256(aztecWallet: AccountWallet): Promise<[string, string]> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
-        const ethAddress = await ethWallet.getAddress();
-        console.log('Name:', name);
-        console.log('Timestamp: ', timestamp);
-        console.log('Eth address: ', Fr.fromString(ethAddress));
-        return await instance.methods.get_content_hash(aztecWallet.getAddress(), redemption_hash, name, timestamp, Fr.fromString(ethAddress)).view();
+        const aztecAddress = aztecWallet.getAddress();
+        const hashNoir = await instance.methods.format_eth_msg(aztecAddress).view();
+        const msgBytes = Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')));
+        const ethersHash = hashMessage(msgBytes);
+        const noirHash = `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`;
+        return [ethersHash, noirHash]
     }
-
-    // async getKeccak256(aztecWallet: AccountWallet): Promise<string, string> {
-    //     const instance = await ZybilContract.at(this.zybil, aztecWallet);
-    //     const aztecAddress = aztecWallet.getAddress();
-    //     const hashNoir = await instance.methods.compute_keccak_256(aztecAddress).view();
-    //     const msgBytes = Uint8Array.from(getBytes(Buffer.from(aztecAddress.toString().slice(2), 'hex')));
-    //     const ethersHash = hashMessage(msgBytes);
-    //     const noirHash = `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`;
-    //     return [ethersHash, noirHash]
-    // }
 }

@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@aztec/l1-contracts@^0.9.0":
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/@aztec/l1-contracts/-/l1-contracts-0.9.0.tgz#26d30e43d87d567aaa030198f89b836c8f2523f9"
-  integrity sha512-SCMvnVHDtIsWsN/vl4CmzeLp/hkJ/Z3QB4P/xycHCkE/ec4l2Y/khHk/6wBgtdbWEBi2wPezsnBc5uPcqtvkOw==
+"@aztec/l1-contracts@0.11.0":
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/@aztec/l1-contracts/-/l1-contracts-0.11.0.tgz#bcf97a90583119b4e8a1cc16cb9dab2f2a3bb443"
+  integrity sha512-YLDVWV1NotfaigWpp4KKk+Ppp27rObkNfnbR4MaiD6gmQZmxdzi+E0EUUUC5IkBg7nDtJFW8reQcHY5BrSYoNA==
 
 "@chainsafe/as-sha256@^0.3.1":
   version "0.3.1"

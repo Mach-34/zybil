@@ -5,7 +5,7 @@ contract Zybil {
     use dep::aztec::{
         constants_gen::{MAX_NOTES_PER_PAGE},
         context::Context,
-        hash::compute_secret_hash,
+        hash::{compute_secret_hash, sha256_to_field},
         note::{
             note_viewer_options::NoteViewerOptions,
             note_header::NoteHeader,
@@ -30,12 +30,19 @@ contract Zybil {
         util::{
             get_ens_stamp_private_content_hash,
             filter_eth_address_stamp,
-            STAMP_ID
+            STAMP_ID,
+            STAMP_SCORE
         },
     };
     use dep::std::option::Option;
 
-    global STAMP_SCORES = [7, 12, 4, 2, 15];
+    global STAMP_SCORES = [
+    STAMP_SCORE::ETHEREUM, 
+    STAMP_SCORE::ENS, 
+    STAMP_SCORE::GOOGLE, 
+    STAMP_SCORE::DISCORD, 
+    STAMP_SCORE::GITHUB
+];
 
     mod StorageSlots {
         global BACKEND_ID = 1;
@@ -97,31 +104,30 @@ contract Zybil {
         name: Field,
         timestamp: Field,
         msg_key: Field,
-        consumption_hash: Field,
+        consumption_secret: Field
     ) {
         // Retrieve Eth Address from stamps. Use as canceller, will fail if wrong eth address stamped/ provided
-        let address = get_eth_address(context.msg_sender());
+        let eth_address = get_eth_address(context.msg_sender());
 
         // consume L1 to L2 and emit nullifier
         let content_hash = get_ens_stamp_private_content_hash(
             redemption_hash,
             name,
             timestamp,
-            address
+            eth_address
         );
 
-        // https://docs.aztec.network/dev_docs/tutorials/token_portal/minting_on_aztec#private-flow
         // CONSUME L1 MESSAGE TO L2
-        // What is msg key?
-        // Is the secret the redemption? Harcoding to zero for now
-        // context.consume_l1_to_l2_message(msg_key, content_hash, 0);
+        context.consume_l1_to_l2_message(msg_key, content_hash, consumption_secret);
+
         // CREATE NEW ENS STAMP AND STORE IN SET
-        
         let mut stamp = StampNote::new(
             context.msg_sender(),
             STAMP_ID::ENS,
             name
-        );      
+        );     
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp, false); 
+
         // EMIT ENCRYPTED LOG OF STAMP CREATION
         emit_encrypted_log(
             &mut context,
@@ -130,27 +136,6 @@ contract Zybil {
             get_public_key(context.msg_sender()),
             stamp.serialize()
         );
-    }
-
-    unconstrained fn get_content_hash(
-        owner: Field,
-        redemption_hash: Field,
-        name: Field,
-        timestamp: Field,
-        address: Field,
-    ) -> Field {
-        // Retrieve Eth Address from stamps. Use as canceller, will fail if wrong eth address stamped/ provided
-        // let address = get_eth_address(owner);
-
-        // consume L1 to L2 and emit nullifier
-        let content_hash = get_ens_stamp_private_content_hash(
-            redemption_hash,
-            name,
-            timestamp,
-            address
-        );
-
-        content_hash
     }
 
     /**
@@ -162,9 +147,8 @@ contract Zybil {
      */
     #[aztec(private)]
     fn stamp_ethkey(pubkey_x: [u8; 32], pubkey_y: [u8; 32], signature: [u8; 64]) {
-        // convert msg.sender to [u8] as message to be signed
-        // let message = context.msg_sender().to_be_bytes(32);
-        let message = dep::std::hash::keccak256(context.msg_sender().to_be_bytes(32), 32);
+        // convert msg.sender eth signature message format
+        let message = format_eth_msg(context.msg_sender());
         // check signature
         let valid_signature = dep::std::ecdsa_secp256k1::verify_signature(
             pubkey_x,
@@ -219,7 +203,7 @@ contract Zybil {
         address
     }
 
-    unconstrained fn get_score(owner: AztecAddress) -> u120 {
+    unconstrained fn get_score(owner: AztecAddress) -> u8 {
         let options = NoteViewerOptions::new().set_offset(0);
         let notes = storage.stamps.at(owner.address).view_notes(options);
         let mut sum = 0;

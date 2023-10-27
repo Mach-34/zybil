@@ -13,6 +13,14 @@ mod STAMP_ID {
     global GITHUB: u8 = 4;
 }
 
+mod STAMP_SCORE {
+    global ETHEREUM: u8 = 7;
+    global ENS: u8 = 12;
+    global GOOGLE: u8 = 4;
+    global DISCORD: u8 = 2;
+    global GITHUB: u8 = 15;  
+}
+
 pub fn get_ens_stamp_private_content_hash(
     secret_redemption_hash: Field,
     name: Field,
