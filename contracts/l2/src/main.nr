@@ -30,6 +30,7 @@ contract Zybil {
         },
         util::{
             get_ens_stamp_private_content_hash,
+            get_attestation_content_hash,
             filter_eth_address_stamp,
             STAMP_ID,
             STAMP_SCORE
@@ -192,29 +193,16 @@ contract Zybil {
         );
     }
 
-   unconstrained fn get_eth_address(owner: Field) -> Field {
-        let mut address = 0; 
-        let options = NoteViewerOptions::new().set_offset(0);
-        let notes = storage.stamps.at(owner).view_notes(options);
-        let filtered = filter_eth_address_stamp(notes);
-        if filtered[0].is_some() {
-            let stamp = filtered[0].unwrap_unchecked();
-            address = stamp.data;
-        }
-        address
-    }
-
-    unconstrained fn get_score(owner: AztecAddress) -> u8 {
-        let options = NoteViewerOptions::new().set_offset(0);
-        let notes = storage.stamps.at(owner.address).view_notes(options);
-        let mut sum = 0;
-        for i in 0..notes.len() {
-            if notes[i].is_some() {
-                let stamp = notes[i].unwrap_unchecked();
-                sum += STAMP_SCORES[stamp.stamp_type - 1];
-            }
-        }
-        sum
+    #[aztec(private)]
+    fn attest_l1(caller_on_l1: Field) -> bool {
+        // compute merkle root of stamp data
+        let root = compute_stamp_merkle_root(context.msg_sender());
+        // compute content hash of attestation
+        let content_hash = get_attestation_content_hash(root, caller_on_l1);
+        // send message to l2 outbox
+        context.message_portal(content_hash);
+        // return success
+        true
     }
 
     // TODO: Need to nullify stamps 
@@ -241,21 +229,46 @@ contract Zybil {
         );
     }
 
-    unconstrained fn encode_msg(msg: [Field; 2]) -> [u8; 33] {
-            let mut bytes: [u8; 33] = [0; 33]; 
-            let data = msg[1].to_be_bytes(32);
-            bytes[0] = msg[0] as u8;
-            for i in 0..32 {
-                bytes[i + 1] = data[i];
-            }
-            bytes
-    }
-
+    
     #[aztec(public)]
     internal fn initialize(signer_x: Field, signer_y: Field) {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
 
+    unconstrained fn get_eth_address(owner: Field) -> Field {
+        let mut address = 0; 
+        let options = NoteViewerOptions::new().set_offset(0);
+        let notes = storage.stamps.at(owner).view_notes(options);
+        let filtered = filter_eth_address_stamp(notes);
+        if filtered[0].is_some() {
+            let stamp = filtered[0].unwrap_unchecked();
+            address = stamp.data;
+        }
+        address
+    }
+
+    unconstrained fn get_score(owner: AztecAddress) -> u8 {
+        let options = NoteViewerOptions::new().set_offset(0);
+        let notes = storage.stamps.at(owner.address).view_notes(options);
+        let mut sum = 0;
+        for i in 0..notes.len() {
+            if notes[i].is_some() {
+                let stamp = notes[i].unwrap_unchecked();
+                sum += STAMP_SCORES[stamp.stamp_type - 1];
+            }
+        }
+        sum
+    }
+
+    unconstrained fn encode_msg(msg: [Field; 2]) -> [u8; 33] {
+        let mut bytes: [u8; 33] = [0; 33]; 
+        let data = msg[1].to_be_bytes(32);
+        bytes[0] = msg[0] as u8;
+        for i in 0..32 {
+            bytes[i + 1] = data[i];
+        }
+        bytes
+    }
 
     unconstrained fn format_eth_msg(owner: Field) ->  [u8; 32] {
         // decompose owner into 8 bit limbs in big endian
