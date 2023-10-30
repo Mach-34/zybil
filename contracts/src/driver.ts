@@ -260,9 +260,9 @@ export class ZybilDriver {
         return [ethersHash, noirHash]
     }
 
-    async getNoteIds(aztecWallet: AccountWallet): Promise<Array<FieldLike>> {
+    async getStampRoot(aztecWallet: AccountWallet): Promise<FieldLike> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
-        const val = await instance.methods.get_stamp_ids(aztecWallet.getAddress()).view();
+        const val = await instance.methods.compute_stamp_merkle_root(aztecWallet.getAddress()).view();
         return val;
     }
 }

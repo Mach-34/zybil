@@ -8,6 +8,7 @@ contract Zybil {
         hash::{compute_secret_hash, sha256_to_field},
         note::{
             note_viewer_options::NoteViewerOptions,
+            note_getter_options::SortOrder,
             note_header::NoteHeader,
             utils as note_utils
         },
@@ -291,16 +292,49 @@ contract Zybil {
         note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
     }
 
-    unconstrained fn get_stamp_ids(owner: Field) -> [Field; MAX_NOTES_PER_PAGE] {
-        let options = NoteViewerOptions::new().set_offset(0);
+    unconstrained fn compute_stamp_merkle_root(owner: Field) -> Field {
+        let options = NoteViewerOptions::new().sort(1, SortOrder.ASC).set_offset(0);
         let notes = storage.stamps.at(owner).view_notes(options);
-        let mut ids: [Field; MAX_NOTES_PER_PAGE] = [0; MAX_NOTES_PER_PAGE];
-        for i in 0..notes.len() {
+        let mut leaf_index = [0; 8];
+        // index the notes by stamp type 
+        for i in 1..8 {
             if notes[i].is_some() {
+                // if note exists, store index to later hash data
                 let stamp = notes[i].unwrap_unchecked();
-                ids[i] = stamp.stamp_type as Field;
+                leaf_index[stamp.stamp_type] = i as Field;
+            } else {
+                // else store 0 to hash empty value
+                leaf_index[i] = 0;
             }
         }
-        ids
+        // create hashes of leaves
+        let mut leaves: [Field; 8] = [0; 8];
+        let zero_leaf = dep::std::hash::pedersen([0])[0];
+        leaves[0] = dep::std::hash::pedersen([owner])[0];
+        for i in 1..8 {
+            if leaf_index[i] != 0 {
+                // if note exists, hash data for leaf
+                let note = notes[leaf_index[i]].unwrap_unchecked();
+                leaves[i] = dep::std::hash::pedersen([
+                    note.owner,
+                    note.stamp_type as Field,
+                    note.data
+                ])[0];
+            } else {
+                // if note does not exist, use precomputed empty leaf
+                leaves[i] = zero_leaf;
+            }
+        }
+        // compute merkle root for tree of depth 4
+        let mut level_2: [Field; 4] = [0; 4];
+        for i in 0..level_2.len() {
+            level_2[i] = dep::std::hash::pedersen([leaves[i * 2], leaves[i * 2 + 1]])[0];
+        }
+        let mut level_3: [Field; 2] = [0; 2];
+        for i in 0..level_3.len() {
+            level_3[i] = dep::std::hash::pedersen([level_2[i * 2], level_2[i * 2 + 1]])[0];
+        }
+        // return merkle root
+        dep::std::hash::pedersen([level_3[0], level_3[1]])[0]
     }
 }

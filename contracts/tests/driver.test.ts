@@ -123,8 +123,8 @@ describe('Zybil', () => {
     })
 
     test("Get ids of each stamp", async () => {
-        const ids = await driver.getNoteIds(aztecUsers.alice);
-        console.log("after: ", ids);
+        const stampRoot = await driver.getStampRoot(aztecUsers.alice);
+        console.log("after: ", stampRoot);
     });
 })
 
