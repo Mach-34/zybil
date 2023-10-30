@@ -94,6 +94,9 @@ export class ZybilContract extends ContractBase {
     /** get_score(owner: struct) */
     get_score: ((owner: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** get_stamp_ids(owner: field) */
+    get_stamp_ids: ((owner: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** initialize(signer_x: field, signer_y: field) */
     initialize: ((signer_x: FieldLike, signer_y: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 

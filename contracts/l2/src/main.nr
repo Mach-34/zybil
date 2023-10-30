@@ -210,7 +210,7 @@ contract Zybil {
         for i in 0..notes.len() {
             if notes[i].is_some() {
                 let stamp = notes[i].unwrap_unchecked();
-                sum += STAMP_SCORES[stamp.stamp_type];
+                sum += STAMP_SCORES[stamp.stamp_type - 1];
             }
         }
         sum
@@ -289,5 +289,18 @@ contract Zybil {
     unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
         let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
         note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
+    }
+
+    unconstrained fn get_stamp_ids(owner: Field) -> [Field; MAX_NOTES_PER_PAGE] {
+        let options = NoteViewerOptions::new().set_offset(0);
+        let notes = storage.stamps.at(owner).view_notes(options);
+        let mut ids: [Field; MAX_NOTES_PER_PAGE] = [0; MAX_NOTES_PER_PAGE];
+        for i in 0..notes.len() {
+            if notes[i].is_some() {
+                let stamp = notes[i].unwrap_unchecked();
+                ids[i] = stamp.stamp_type as Field;
+            }
+        }
+        ids
     }
 }
