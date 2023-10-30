@@ -15,7 +15,7 @@ import {
 import { OutboxAbi } from '@aztec/l1-artifacts';
 import { Signer, Contract, SigningKey, computeAddress, hashMessage, toUtf8Bytes, concat, getBytes, hexlify, keccak256 } from 'ethers';
 import { ZybilContract } from './artifacts/l2/Zybil.js';
-import { ENSFactory, PortalFactory } from './artifacts/index.js'
+import { ENSFactory, PortalFactory, EASFactory } from './artifacts/index.js'
 import { generateAddress, hexTou8Array } from './utils.js';
 import { Z_BUF_ERROR } from 'zlib';
 
@@ -44,6 +44,7 @@ export async function deployAndInitialize(
     zybil: AztecAddress;
     portal: Contract;
     ens: Contract;
+    eas: Contract;
 }> {
     // if underlying L1 contract address is not supplied, deploy it
     const ensFactory = ENSFactory.connect(ethWallet);
@@ -55,6 +56,11 @@ export async function deployAndInitialize(
     const portal = await portalFactory.deploy() as Contract;
     await portal.waitForDeployment();
 
+    // deploy L1 EAS contract
+    const easFactory = EASFactory.connect(ethWallet);
+    const eas = await easFactory.deploy() as Contract;
+    await eas.waitForDeployment();
+    (await eas.initialize(await portal.getAddress())).wait();
 
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
@@ -79,7 +85,7 @@ export async function deployAndInitialize(
     await tx.wait();
 
     // return contract addresses
-    return { zybil: zybil.address, portal, ens };
+    return { zybil: zybil.address, portal, ens, eas };
 }
 
 /**
@@ -113,7 +119,7 @@ export class ZybilDriver {
 
         // Deploy and initialize all required contracts
         logger('Deploying and initializing token, portal and its bridge...');
-        const { zybil, portal, ens } = await deployAndInitialize(
+        const { zybil, portal, ens, eas } = await deployAndInitialize(
             aztecWallet,
             ethWallet,
             l1ContractAddresses.registryAddress,
@@ -126,6 +132,7 @@ export class ZybilDriver {
             zybil,
             portal,
             ens,
+            eas,
             outbox,
             aztecWallet
         );
@@ -140,8 +147,10 @@ export class ZybilDriver {
         public zybil: AztecAddress,
         /** Token portal instance. */
         public portal: Contract,
-        /** Underlying token for portal tests. */
+        /** Underlying ENS contract (L1 -> L2). */
         public ens: Contract,
+        /** Underlying EAS contract (L2 -> L1) */
+        public eas: Contract,
         /** Message Bridge Outbox. */
         public outbox: Contract,
         /** Backend Address */

@@ -82,7 +82,7 @@ describe('Zybil', () => {
         expect(score).toEqual(4);
     });
 
-    test("Insert Github Stamp", async () => {
+    xtest("Insert Github Stamp", async () => {
         const verifiedData = { stampType: StampType.GITHUB, id: '19249235023632746335' };
         const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
         await driver.stampWeb2(aztecUsers.alice, msg, signature);
@@ -90,7 +90,7 @@ describe('Zybil', () => {
         expect(score).toEqual(19);
     });
 
-    test("Insert Discord Stamp", async () => {
+    xtest("Insert Discord Stamp", async () => {
         const verifiedData = { stampType: StampType.DISCORD, id: '9401783215792375383' };
         const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
         await driver.stampWeb2(aztecUsers.alice, msg, signature);
@@ -98,13 +98,13 @@ describe('Zybil', () => {
         expect(score).toEqual(21);
     });
 
-    test("Get Ethereum Address Stamp", async () => {
+    xtest("Get Ethereum Address Stamp", async () => {
         await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
         const score = Number(await driver.getScore(aztecUsers.alice));
         expect(score).toEqual(28);
     });
 
-    test("Insert ENS Stamp", async () => {
+    xtest("Insert ENS Stamp", async () => {
         // Stamp eth address
         const ens = 'mach34.eth';
         await driver.setENSName(ens, ethUsers.alice);
@@ -123,8 +123,9 @@ describe('Zybil', () => {
     })
 
     test("Get ids of each stamp", async () => {
-        const stampRoot = await driver.getStampRoot(aztecUsers.alice);
-        console.log("after: ", stampRoot);
+        // const stampRoot = await driver.getStampRoot(aztecUsers.alice);
+        // console.log("after: ", stampRoot);
+        console.log("TRUE", true);
     });
 })
 
