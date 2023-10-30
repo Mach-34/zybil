@@ -45,7 +45,14 @@ contract ZybilPortal {
         uint32 _deadline,
         bytes32 _redemptionHash,
         bytes32 _consumptionHash
-    ) external payable returns (bytes32 _key) {
+    )
+        external
+        payable
+        returns (
+            // bytes32 _timestamp
+            bytes32 _key
+        )
+    {
         // Preamble
         IInbox inbox = registry.getInbox();
         DataStructures.L2Actor memory actor = DataStructures.L2Actor(
@@ -57,7 +64,7 @@ contract ZybilPortal {
         (string memory name, uint256 timestamp) = getENSRecordAge(msg.sender);
 
         // Hash message content to be reconstructed in the receiving contract
-        bytes32 nameBytes = bytes32(bytes(name));
+        bytes32 nameBytes = bytes32(padZeros(bytes(name), 32));
         bytes32 contentHash = Hash.sha256ToField(
             abi.encodeWithSignature(
                 "stamp_ens(bytes32,bytes32,uint256,address)",
@@ -88,5 +95,24 @@ contract ZybilPortal {
         _name = underlying.getReverse(_account);
         // get timestamp = records
         (, , _timestamp) = underlying.records(_name);
+    }
+
+    function padZeros(
+        bytes memory original,
+        uint256 totalLength
+    ) public pure returns (bytes memory) {
+        require(
+            totalLength >= original.length,
+            "Total length must be greater than or equal to the original length"
+        );
+
+        bytes memory padded = new bytes(totalLength);
+        uint256 paddingLength = totalLength - original.length;
+
+        for (uint256 i = 0; i < original.length; i++) {
+            padded[i + paddingLength] = original[i];
+        }
+
+        return padded;
     }
 }

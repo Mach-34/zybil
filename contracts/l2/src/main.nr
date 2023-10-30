@@ -5,7 +5,7 @@ contract Zybil {
     use dep::aztec::{
         constants_gen::{MAX_NOTES_PER_PAGE},
         context::Context,
-        hash::compute_secret_hash,
+        hash::{compute_secret_hash, sha256_to_field},
         note::{
             note_viewer_options::NoteViewerOptions,
             note_header::NoteHeader,
@@ -30,12 +30,19 @@ contract Zybil {
         util::{
             get_ens_stamp_private_content_hash,
             filter_eth_address_stamp,
-            STAMP_ID
+            STAMP_ID,
+            STAMP_SCORE
         },
     };
     use dep::std::option::Option;
 
-    global STAMP_SCORES = [7, 12, 4, 2, 15];
+    global STAMP_SCORES = [
+    STAMP_SCORE::ETHEREUM, 
+    STAMP_SCORE::ENS, 
+    STAMP_SCORE::GOOGLE, 
+    STAMP_SCORE::DISCORD, 
+    STAMP_SCORE::GITHUB
+];
 
     mod StorageSlots {
         global BACKEND_ID = 1;
@@ -97,29 +104,38 @@ contract Zybil {
         name: Field,
         timestamp: Field,
         msg_key: Field,
-        consumption_hash: Field,
+        consumption_secret: Field
     ) {
-        // GET THE STORED ETH ADDRESS OUT OF ETHKEY STAMP
-        // use as canceller, will fail if wrong eth address stamped/ provided
-        // Retrieve Eth Address from stamps
-        let address = getEthAddress(context.msg_sender());
-        assert(address != 0, "Address is not zero");
-        // consume L1 to L2 and emit nullifier
-        // todo: fix inputs
-        // let content_hash = get_ens_stamp_private_content_hash(
-        //     redemption_hash,
-        //     addr.address,
-        //     timestamp,
-        //     canceller.address
-        // );
+        // Retrieve Eth Address from stamps. Use as canceller, will fail if wrong eth address stamped/ provided
+        let eth_address = get_eth_address(context.msg_sender());
 
-        // https://docs.aztec.network/dev_docs/tutorials/token_portal/minting_on_aztec#private-flow
-        // do (context.consume_l1_to_l2_message(msg_key, content_hash, secret_for_L1_to_L2_message_consumption);)
+        // consume L1 to L2 and emit nullifier
+        let content_hash = get_ens_stamp_private_content_hash(
+            redemption_hash,
+            name,
+            timestamp,
+            eth_address
+        );
+
         // CONSUME L1 MESSAGE TO L2
+        context.consume_l1_to_l2_message(msg_key, content_hash, consumption_secret);
 
         // CREATE NEW ENS STAMP AND STORE IN SET
-        
+        let mut stamp = StampNote::new(
+            context.msg_sender(),
+            STAMP_ID::ENS,
+            name
+        );     
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp, false); 
+
         // EMIT ENCRYPTED LOG OF STAMP CREATION
+        emit_encrypted_log(
+            &mut context,
+            context.this_address(),
+            stamp.header.storage_slot,
+            get_public_key(context.msg_sender()),
+            stamp.serialize()
+        );
     }
 
     /**
@@ -131,9 +147,8 @@ contract Zybil {
      */
     #[aztec(private)]
     fn stamp_ethkey(pubkey_x: [u8; 32], pubkey_y: [u8; 32], signature: [u8; 64]) {
-        // convert msg.sender to [u8] as message to be signed
-        let message = context.msg_sender().to_be_bytes(32);
-
+        // convert msg.sender eth signature message format
+        let message = format_eth_msg(context.msg_sender());
         // check signature
         let valid_signature = dep::std::ecdsa_secp256k1::verify_signature(
             pubkey_x,
@@ -164,7 +179,7 @@ contract Zybil {
             STAMP_ID::ETHEREUM,
             address
         );
-        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp, false);
 
         // emit encrypted log of stamp creation
         emit_encrypted_log(
@@ -176,7 +191,7 @@ contract Zybil {
         );
     }
 
-   unconstrained fn getEthAddress(owner: Field) -> Field {
+   unconstrained fn get_eth_address(owner: Field) -> Field {
         let mut address = 0; 
         let options = NoteViewerOptions::new().set_offset(0);
         let notes = storage.stamps.at(owner).view_notes(options);
@@ -188,7 +203,7 @@ contract Zybil {
         address
     }
 
-    unconstrained fn getScore(owner: AztecAddress) -> u120 {
+    unconstrained fn get_score(owner: AztecAddress) -> u8 {
         let options = NoteViewerOptions::new().set_offset(0);
         let notes = storage.stamps.at(owner.address).view_notes(options);
         let mut sum = 0;
@@ -214,7 +229,7 @@ contract Zybil {
             msg[0] as u8,
             msg[1]
         );        
-        storage.stamps.at(context.msg_sender()).insert(&mut stamp);
+        storage.stamps.at(context.msg_sender()).insert(&mut stamp, false);
         
         emit_encrypted_log(
             &mut context,
@@ -238,6 +253,37 @@ contract Zybil {
     #[aztec(public)]
     internal fn initialize(signer_x: Field, signer_y: Field) {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
+    }
+
+
+    unconstrained fn format_eth_msg(owner: Field) ->  [u8; 32] {
+        // decompose owner into 8 bit limbs in big endian
+        let owner_bytes: [u8] = owner.to_be_bytes(32);
+
+        // construct full message preimage
+        let mut bytes: [u8; 60] = [0; 60];
+        // prefix = "\x19Ethereum Signed Message:\n"
+        let prefix: [u8; 26] = [25,  69, 116, 104, 101, 114, 101, 117, 109,  32,  83, 105, 103, 110, 101, 100,  32,  77, 101, 115, 115, 97, 103, 101,  58,  10];
+        for i in 0..26 {
+            bytes[i] = prefix[i];
+        }
+
+        bytes[26] = 51;
+        bytes[27] = 50;
+        for i in 0..32 {
+            bytes[i + 28] = owner_bytes[i];
+        }
+
+        // length of message 
+        bytes[26] = 51;
+        bytes[27] = 50;
+        // message
+        for i in 0..32 {
+            bytes[i + 28] = owner_bytes[i];
+        }
+
+        // return the keccak hash of message
+        dep::std::hash::keccak256(bytes, 60)
     }
 
     unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {

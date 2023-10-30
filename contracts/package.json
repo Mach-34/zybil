@@ -9,8 +9,8 @@
     "test": "NODE_NO_WARNINGS=1 node --experimental-vm-modules $(yarn bin jest) --no-cache --runInBand --config jest.integration.config.json"
   },
   "devDependencies": {
-    "@aztec/aztec.js": "0.8.14",
-    "@aztec/cli": "0.8.14",
+    "@aztec/aztec.js": "0.11.0",
+    "@aztec/cli": "0.11.0",
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
     "@babel/preset-typescript": "^7.23.2",
@@ -23,12 +23,12 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@aztec/aztec-node": "0.8.14",
-    "@aztec/aztec.js": "0.8.14",
-    "@aztec/foundation": "0.8.14",
-    "@aztec/l1-contracts": "0.8.14",
-    "@aztec/pxe": "0.8.14",
-    "@aztec/types": "0.8.14",
+    "@aztec/aztec-node": "0.11.0",
+    "@aztec/aztec.js": "0.11.0",
+    "@aztec/foundation": "0.11.0",
+    "@aztec/l1-contracts": "0.11.0",
+    "@aztec/pxe": "0.11.0",
+    "@aztec/types": "0.11.0",
     "@types/jest": "^29.5.6",
     "ethers": "^6.8.0"
   }
