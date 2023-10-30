@@ -23,5 +23,11 @@ rm -rf ./l1/artifacts ./l1/cache
 yarn aztec-cli compile ./l2 -ts .
 mv l2/target/Zybil.json src/artifacts/l2
 mv l2/Zybil.ts src/artifacts/l2
-sed -i '' "s|target/Zybil.json|./Zybil.json|" src/artifacts/l2/Zybil.ts
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    sed -i '' "s|target/Zybil.json|./Zybil.json|" src/artifacts/l2/Zybil.ts
+else
+    # Linux
+    sed -i "s|target/Zybil.json|./Zybil.json|" src/artifacts/l2/Zybil.ts
+fi
 rm -rf l2/target

@@ -6,16 +6,16 @@ use dep::std::option::Option;
 use crate::types::stamp_note::StampNote;
 
 mod STAMP_ID {
-    global ETHEREUM: u8 = 0;
-    global ENS: u8 = 1;
-    global GOOGLE: u8 = 2;
-    global DISCORD: u8 = 3;
-    global GITHUB: u8 = 4;
+    global ETHEREUM: u8 = 1;
+    global ENS: u8 = 2;
+    global GOOGLE: u8 = 3;
+    global DISCORD: u8 = 4;
+    global GITHUB: u8 = 5;
 }
 
 mod STAMP_SCORE {
     global ETHEREUM: u8 = 7;
-    global ENS: u8 = 12;
+    global ENS: u8 = 24;
     global GOOGLE: u8 = 4;
     global DISCORD: u8 = 2;
     global GITHUB: u8 = 15;  
@@ -51,6 +51,14 @@ pub fn get_ens_stamp_private_content_hash(
     sha256_to_field(hash_bytes)
 }
 
+// pub fn get_attestation_content_hash(
+//     recipient: Field,
+//     caller_on_l1: Field,
+// )
+
+// pub fn compute_attestation_merkle_root([Option<StampNote>; MAX_NOTES_PER_PAGE]) -> [Field; MAX_NOTES_PER_PAGE] {
+//     let notes = storage.stamps.at(owner.address).view_notes(options);
+// }
 pub fn filter_eth_address_stamp(notes: [Option<StampNote>; MAX_NOTES_PER_PAGE]) -> [Option<StampNote>; 1] {
     let mut eth_stamp_ret = [Option::none(); 1];
     for i in 0..notes.len() {

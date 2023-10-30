@@ -17,6 +17,7 @@ import { Signer, Contract, SigningKey, computeAddress, hashMessage, toUtf8Bytes,
 import { ZybilContract } from './artifacts/l2/Zybil.js';
 import { ENSFactory, PortalFactory } from './artifacts/index.js'
 import { generateAddress, hexTou8Array } from './utils.js';
+import { Z_BUF_ERROR } from 'zlib';
 
 const DEADLINE = 2 ** 32 - 1; // message expiry deadline
 
@@ -257,5 +258,11 @@ export class ZybilDriver {
         const ethersHash = hashMessage(msgBytes);
         const noirHash = `0x${Buffer.from(hashNoir.map((num: BigInt) => Number(num))).toString('hex')}`;
         return [ethersHash, noirHash]
+    }
+
+    async getNoteIds(aztecWallet: AccountWallet): Promise<Array<FieldLike>> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const val = await instance.methods.get_stamp_ids(aztecWallet.getAddress()).view();
+        return val;
     }
 }

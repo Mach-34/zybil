@@ -5,3 +5,4 @@ cache
 contracts/artifacts
 ./contracts/l2/target
 log
+crs
