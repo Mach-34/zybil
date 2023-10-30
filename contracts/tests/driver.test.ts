@@ -105,7 +105,7 @@ describe('Zybil', () => {
         // Stamp eth address
         await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
 
-        const ens = '!';
+        const ens = 'supersupersupersupersu.ens';
         await driver.setENSName(ens, ethUsers.alice);
         // Generate consumption and remdemption hash
         const { hash: consumptionHash, secret: consumptionSecret } = await driver.generateClaimSecret();

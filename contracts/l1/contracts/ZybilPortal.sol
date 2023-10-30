@@ -64,7 +64,7 @@ contract ZybilPortal {
         (string memory name, uint256 timestamp) = getENSRecordAge(msg.sender);
 
         // Hash message content to be reconstructed in the receiving contract
-        bytes32 nameBytes = bytes32(bytes(name));
+        bytes32 nameBytes = bytes32(padZeros(bytes(name), 32));
         bytes32 contentHash = Hash.sha256ToField(
             abi.encodeWithSignature(
                 "stamp_ens(bytes32,bytes32,uint256,address)",
@@ -97,46 +97,22 @@ contract ZybilPortal {
         (, , _timestamp) = underlying.records(_name);
     }
 
-    // function reverse(bytes32 input) internal pure returns (bytes32 v) {
-    //     v = input;
+    function padZeros(
+        bytes memory original,
+        uint256 totalLength
+    ) public pure returns (bytes memory) {
+        require(
+            totalLength >= original.length,
+            "Total length must be greater than or equal to the original length"
+        );
 
-    //     // swap bytes
-    //     v =
-    //         ((v &
-    //             0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >>
-    //             8) |
-    //         ((v &
-    //             0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) <<
-    //             8);
+        bytes memory padded = new bytes(totalLength);
+        uint256 paddingLength = totalLength - original.length;
 
-    //     // swap 2-byte long pairs
-    //     v =
-    //         ((v &
-    //             0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >>
-    //             16) |
-    //         ((v &
-    //             0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) <<
-    //             16);
+        for (uint256 i = 0; i < original.length; i++) {
+            padded[i + paddingLength] = original[i];
+        }
 
-    //     // swap 4-byte long pairs
-    //     v =
-    //         ((v &
-    //             0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >>
-    //             32) |
-    //         ((v &
-    //             0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) <<
-    //             32);
-
-    //     // swap 8-byte long pairs
-    //     v =
-    //         ((v &
-    //             0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >>
-    //             64) |
-    //         ((v &
-    //             0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) <<
-    //             64);
-
-    //     // swap 16-byte long pairs
-    //     v = (v >> 128) | (v << 128);
-    // }
+        return padded;
+    }
 }
