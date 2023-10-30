@@ -8,6 +8,8 @@ import {
     FieldLike,
     Point,
     Wallet,
+    Tx,
+    TxStatus,
 } from "@aztec/aztec.js";
 import { ContractArtifact } from '@aztec/foundation/abi';
 import { Schnorr } from "@aztec/circuits.js/barretenberg";
@@ -75,16 +77,30 @@ const generateSignatureAndMsg = async (privkey: GrumpkinScalar) => {
 async function main() {
     const pubkey = await generatePublicKey(GrumpkinScalar.fromString(privkey))
     const client = createPXEClient(sandboxURL);
-    const zybil = await deployContract(client as Wallet, pubkey);
+    const [wallet] = await getSandboxAccountsWallets(client);
+    const zybil = await deployContract(wallet, pubkey);
 
 
     const { msg, signature } = await generateSignatureAndMsg(GrumpkinScalar.fromString(privkey));
 
-    const verified = await zybil.methods.valid_signature(
+    await zybil.methods.stamp_web2(
         signature,
         msg
-    ).view();
-    console.log('Decoded: ', verified);
+    ).send().wait();
+    // let receipt = await zybil.methods.valid_signature(
+    //     signature,
+    //     msg
+    // ).send().wait();
+
+    // console.log("RECEIPT", receipt);
+
+    // if (receipt.status != TxStatus.MINED)
+    //     throw new Error("FUCK");
+    // await zybil.methods.valid_signature(
+    //     signature,
+    //     msg
+    // ).view();
+    // console.log('Stamp created')
 }
 
 main()

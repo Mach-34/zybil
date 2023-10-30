@@ -1,11 +1,16 @@
-use dep::aztec::hash::sha256_to_field;
+use dep::aztec::{
+    constants_gen::MAX_NOTES_PER_PAGE,
+    hash::sha256_to_field,
+};
+use dep::std::option::Option;
+use crate::types::stamp_note::StampNote;
 
 mod STAMP_ID {
-    global ETHEREUM: u8 = 1;
-    global ENS: u8 = 2;
-    global GOOGLE: u8 = 3;
-    global DISCORD: u8 = 4;
-    global GITHUB: u8 = 5;
+    global ETHEREUM: u8 = 0;
+    global ENS: u8 = 1;
+    global GOOGLE: u8 = 2;
+    global DISCORD: u8 = 3;
+    global GITHUB: u8 = 4;
 }
 
 pub fn get_ens_stamp_private_content_hash(
@@ -36,4 +41,17 @@ pub fn get_ens_stamp_private_content_hash(
     hash_bytes[3] = 0x7e;
 
     sha256_to_field(hash_bytes)
+}
+
+pub fn filter_eth_address_stamp(notes: [Option<StampNote>; MAX_NOTES_PER_PAGE]) -> [Option<StampNote>; 1] {
+    let mut eth_stamp_ret = [Option::none(); 1];
+    for i in 0..notes.len() {
+        if notes[i].is_some() {
+            let stamp = notes[i].unwrap_unchecked();
+            if stamp.stamp_type == STAMP_ID::ETHEREUM {
+                eth_stamp_ret[0] = notes[i];
+            }
+        }
+    }
+    eth_stamp_ret
 }

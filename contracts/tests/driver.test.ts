@@ -15,12 +15,14 @@ import { ZybilContract } from '../src/artifacts/index.js';
 import { ZybilDriver, ClaimSecret } from '../src/driver.js';
 import { sleep } from '@aztec/aztec.js';
 import { Signer, SigningKey, JsonRpcProvider, HDNodeWallet, Mnemonic, } from 'ethers';
-import { ecdsaUncompressedPubkey, ecdsaPubkey } from './utils/index.js';
-
+import { ecdsaUncompressedPubkey, ecdsaPubkey, generateSignatureAndMsg, StampType } from './utils/index.js';
+import dotenv from 'dotenv';
+dotenv.config();
 const {
     PXE_URL = 'http://localhost:8080',
     ETHEREUM_URL = 'http://localhost:8545',
-    MNEMONIC = 'test test test test test test test test test test test junk'
+    MNEMONIC = 'test test test test test test test test test test test junk',
+    GRUMPKIN_PRIV_KEY
 } = process.env;
 
 describe('Zybil', () => {
@@ -69,12 +71,53 @@ describe('Zybil', () => {
         logger("Initialized Test Environment")
     })
 
+    // test("Insert Gmail Stamp", async () => {
+    //     const verifiedData = { stampType: StampType.GOOGLE, id: 'Test@gmail.com' };
+    //     const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
+    //     await driver.stampWeb2(aztecUsers.alice, msg, signature);
+    //     const score = Number(await driver.getScore(aztecUsers.alice));
+    //     expect(score).toEqual(4);
+    // });
+
+    // test("Insert Github Stamp", async () => {
+    //     const verifiedData = { stampType: StampType.GITHUB, id: '19249235023632746335' };
+    //     const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
+    //     await driver.stampWeb2(aztecUsers.alice, msg, signature);
+    //     const score = Number(await driver.getScore(aztecUsers.alice));
+    //     expect(score).toEqual(19);
+    // });
+
+    // test("Insert Discord Stamp", async () => {
+    //     const verifiedData = { stampType: StampType.DISCORD, id: '9401783215792375383' };
+    //     const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
+    //     await driver.stampWeb2(aztecUsers.alice, msg, signature);
+    //     const score = Number(await driver.getScore(aztecUsers.alice));
+    //     expect(score).toEqual(21);
+    // });
+
     test("Get Ethereum Address Stamp", async () => {
         await driver.stampEthAddress(aztecUsers.alice, ethUsers.alice);
+        // const score = Number(await driver.getScore(aztecUsers.alice));
+        // expect(score).toEqual(28);
     });
+
+    test("Insert ENS Stamp", async () => {
+        const name = 'ens.eth';
+        // await driver.setENSName(name, ethUsers.alice);
+        // Generate consumption and remdemption has
+        // const { hash: consumptionHash, secret: consumptionSecret } = await driver.generateClaimSecret();
+        // const { hash: redemptionHash, secret: redemptionSecret } = await driver.generateClaimSecret();
+        // const eventData = await driver.pushENStoAztec(redemptionHash, consumptionHash, ethUsers.alice);
+        // Clain ENS ownership on L2
+        // console.log('Event data: ', eventData);
+        await driver.stampENS(aztecUsers.alice);
+    })
+
+
+
     // test("x", async () => {
     //     console.log("A");
-        
+
     // })
 })
 
