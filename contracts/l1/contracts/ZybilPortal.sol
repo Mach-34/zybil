@@ -97,6 +97,12 @@ contract ZybilPortal {
         (, , _timestamp) = underlying.records(_name);
     }
 
+    /**
+     * Add leading zeroes to the beginning of the ens name converted to bytes. By default solidity pads zeros to the end
+     * of the string when converted to bytes32 and this hexidecimal representation often exceeds the field size
+     *
+     * TODO
+     */
     function padZeros(
         bytes memory original,
         uint256 totalLength
