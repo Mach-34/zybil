@@ -15,6 +15,7 @@ contract ZybilPortal {
         uint256 _timestamp,
         address _address
     );
+    event L1MSG(bytes32 _sender, address _recipient, bytes32 _content);
 
     IRegistry public registry;
     ToyENS public ens;
@@ -92,6 +93,31 @@ contract ZybilPortal {
 
         // Emit event to retrieve from L2
         emit L2Message(_key, nameBytes, timestamp, msg.sender);
+    }
+
+    function attestToStamps(uint256 _root) external returns (bytes32) {
+        // compute content hash
+        DataStructures.L2ToL1Msg memory message = DataStructures.L2ToL1Msg({
+            sender: DataStructures.L2Actor(l2ZybilAddress, 1),
+            recipient: DataStructures.L1Actor(address(this), block.chainid),
+            content: Hash.sha256ToField(
+                abi.encodeWithSignature(
+                    "attest(address, uint256)",
+                    msg.sender,
+                    _root,
+                    msg.sender
+                )
+            )
+        });
+
+        emit L1MSG(message.sender.actor, message.recipient.actor, message.content);
+        // // consume message
+        // bytes32 key = registry.getOutbox().consume(message);
+        // // perform attestation
+        // eas.attest(msg.sender, _root);
+        // // return message key
+        // return key;
+        return bytes32(0x00);
     }
 
     function getENSRecordAge(

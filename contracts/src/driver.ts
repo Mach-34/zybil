@@ -254,6 +254,28 @@ export class ZybilDriver {
             throw new Error(`Failed to stamp Web2: ${receipt.status}`);
     }
 
+    async sendAttestationFromL2(aztecWallet: AccountWallet, recipient: Signer): Promise<void> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const receipt = await instance.methods.attest_l1(
+            Fr.fromString(await recipient.getAddress())
+        ).send().wait();
+        if (receipt.status !== TxStatus.MINED)
+            throw new Error(`Failed to send attestation from l2 to l1: ${receipt.status}`);
+    }
+
+    async consumeAttestationOnL1(from: Signer, root: FieldLike): Promise<void> {
+        let signer = new NonceManager(from);
+        const tx = await (this.portal.connect(signer) as Contract).attestToStamps(
+            root.toString(),
+            { gasLimit: 30000000, gasPrice: parseUnits("20000000000", "wei") }
+        );
+        let receipt = await tx.wait();
+        console.log("Sender: ", receipt.logs[0].args[0]);
+        console.log("Recipient: ", BigInt(receipt.logs[0].args[1]).toString(10));
+        console.log("Content Hash: ", BigInt(receipt.logs[0].args[2]).toString(10));
+
+    }
+
     async getEthAddress(aztecWallet: AccountWallet): Promise<BigInt> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         // TODO: Get value from decoded log instead of unconstrained function
@@ -283,4 +305,17 @@ export class ZybilDriver {
         const val = await instance.methods.compute_stamp_merkle_root(aztecWallet.getAddress()).view();
         return val;
     }
+
+    async getAttestationContentHash(aztecWallet: AccountWallet, ethWallet: Signer): Promise<FieldLike> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        let contentHash = await instance.methods.compute_attestation_content_hash(
+            aztecWallet.getAddress(),
+            Fr.fromString(await ethWallet.getAddress())
+        ).view();
+        return contentHash
+    }
+
+    // async getAttestation(from: Signer): Promise<FieldLike> {
+    //     const root = await (this.eas.connect(from) as Contract).
+    // }
 }

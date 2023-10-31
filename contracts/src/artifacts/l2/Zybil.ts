@@ -82,6 +82,9 @@ export class ZybilContract extends ContractBase {
     /** attest_l1(caller_on_l1: field) */
     attest_l1: ((caller_on_l1: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** compute_attestation_content_hash(owner: field, caller_on_l1: field) */
+    compute_attestation_content_hash: ((owner: FieldLike, caller_on_l1: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** compute_note_hash_and_nullifier(contract_address: field, nonce: field, storage_slot: field, preimage: array) */
     compute_note_hash_and_nullifier: ((contract_address: FieldLike, nonce: FieldLike, storage_slot: FieldLike, preimage: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 

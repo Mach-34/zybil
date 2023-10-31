@@ -235,6 +235,11 @@ contract Zybil {
         storage.registered_signer.write(Pubkey {x: signer_x, y: signer_y});
     }
 
+    unconstrained fn compute_attestation_content_hash(owner: Field, caller_on_l1: Field) -> Field {
+        let root = compute_stamp_merkle_root(owner);
+        get_attestation_content_hash(root, caller_on_l1)
+    }
+
     unconstrained fn get_eth_address(owner: Field) -> Field {
         let mut address = 0; 
         let options = NoteViewerOptions::new().set_offset(0);
