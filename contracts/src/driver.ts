@@ -11,9 +11,10 @@ import {
     Wallet as AztecWallet,
     computeMessageSecretHash,
     AccountWallet,
+    sleep,
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';
-import { Signer, Contract, SigningKey, computeAddress, hashMessage, toUtf8Bytes, concat, getBytes, hexlify, keccak256 } from 'ethers';
+import { Signer, Contract, SigningKey, NonceManager, hashMessage, toUtf8Bytes, concat, getBytes, hexlify, parseUnits } from 'ethers';
 import { ZybilContract } from './artifacts/l2/Zybil.js';
 import { ENSFactory, PortalFactory, EASFactory } from './artifacts/index.js'
 import { generateAddress, hexTou8Array } from './utils.js';
@@ -46,28 +47,28 @@ export async function deployAndInitialize(
     ens: Contract;
     eas: Contract;
 }> {
+    let signer = new NonceManager(ethWallet);
     // if underlying L1 contract address is not supplied, deploy it
-    const ensFactory = ENSFactory.connect(ethWallet);
+    const ensFactory = ENSFactory.connect(signer);
     const ens = await ensFactory.deploy() as Contract;
     await ens.waitForDeployment();
-
     // deploy L1 portal contract
-    const portalFactory = PortalFactory.connect(ethWallet);
+    const portalFactory = PortalFactory.connect(signer);
     const portal = await portalFactory.deploy() as Contract;
     await portal.waitForDeployment();
-
     // deploy L1 EAS contract
-    const easFactory = EASFactory.connect(ethWallet);
-    const eas = await easFactory.deploy() as Contract;
+    const easFactory = EASFactory.connect(signer);
+    const eas = await easFactory.deploy({
+        // eas bs
+        gasLimit: 29000000,
+        gasPrice: parseUnits("20000000000", "wei"),
+    }) as Contract;
     await eas.waitForDeployment();
-    (await eas.initialize(await portal.getAddress())).wait();
-
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
     const deployReceipt = await ZybilContract.deploy(aztecWallet, { x: backend.x, y: backend.y })
         .send({ portalContract: EthAddress.fromString(await portal.getAddress()) })
         .wait();
-
     // check that the deploy tx is confirmed
     if (deployReceipt.status !== TxStatus.MINED) throw new Error(`Deploy token tx status is ${deployReceipt.status}`);
     const zybil = await ZybilContract.at(deployReceipt.contractAddress!, aztecWallet);
@@ -76,16 +77,24 @@ export async function deployAndInitialize(
     // if ((await ))
     // if ((await token.methods.admin().view()) !== owner.toBigInt()) throw new Error(`Token admin is not ${owner}`);
 
+    // initialize EAS
+    (await eas.initialize(await portal.getAddress())).wait();
+    // we have to wait before initialize too. Why? I don't know.
+    await sleep(5000);
+
     // initialize L1 portal
     let tx = await portal.initialize(
         registry.toString(),
         await ens.getAddress(),
-        zybil.address.toString()
+        await eas.getAddress(),
+        zybil.address.toString(),
+        { gasLimit: 30000000, gasPrice: parseUnits("20000000000", "wei") } // also some eas bs
     );
     await tx.wait();
-
     // return contract addresses
     return { zybil: zybil.address, portal, ens, eas };
+    // return { zybil: zybil.address, portal, ens };
+
 }
 
 /**
@@ -118,7 +127,7 @@ export class ZybilDriver {
         );
 
         // Deploy and initialize all required contracts
-        logger('Deploying and initializing token, portal and its bridge...');
+        logger('Deploying and initializing eas, ens, and portal...');
         const { zybil, portal, ens, eas } = await deployAndInitialize(
             aztecWallet,
             ethWallet,

@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 contract ToyEAS {
     mapping(address => uint256) public attestations;
     address public portal;
-    bool public initialized;
+    bool public initialized = false;
 
     /**
      * Initialize the contract to 
