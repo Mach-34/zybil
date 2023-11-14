@@ -123,18 +123,17 @@ describe('Zybil', () => {
         expect(score).toEqual(52);
     })
 
-    test("Send private attestation to L1", async () => {
+    test("Test content hash", async () => {
         // get stamp root
         const root = await driver.getStampRoot(aztecUsers.alice);
         // send attestation from L2
         await driver.sendAttestationFromL2(aztecUsers.alice, ethUsers.alice);
         // consume attestation on L1
         await driver.consumeAttestationOnL1(ethUsers.alice, root);
-        let contentHash = await driver.getAttestationContentHash(aztecUsers.alice, ethUsers.alice);
-        console.log("L2 Content Hash: ", contentHash.toString());
-        contentHash = await driver.getAttestationContentHash(aztecUsers.alice, ethUsers.alice);
-        console.log("L2 Content Hash: ", contentHash.toString());
-        // TODO: check merkle root posted on L1
+        // get attestation stored on L1 and compare to expected root
+        console.log("Expected Attestation: ", root);
+        const attestation = await driver.getAttestation(ethUsers.alice);
+        expect(attestation).toEqual(root);
     });
 })
 

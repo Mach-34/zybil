@@ -94,10 +94,6 @@ contract Zybil {
         // Set registered signer
         let selector = compute_selector("initialize(Field,Field)");
         context.call_public_function(context.this_address(), selector, [signer.x, signer.y]);
-        // set the backend address based on the sender
-        // setup bridge
-        // let selector = compute_selector("_initialize((Field))");
-        // context.call_public_function(context.this_address(), selector, )
     }
 
     #[aztec(private)]
@@ -305,11 +301,6 @@ contract Zybil {
         dep::std::hash::keccak256(bytes, 60)
     }
 
-    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
-        let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
-        note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
-    }
-
     unconstrained fn compute_stamp_merkle_root(owner: Field) -> Field {
         let options = NoteViewerOptions::new().sort(1, SortOrder.ASC).set_offset(0);
         let notes = storage.stamps.at(owner).view_notes(options);
@@ -354,5 +345,10 @@ contract Zybil {
         }
         // return merkle root
         dep::std::hash::pedersen([level_3[0], level_3[1]])[0]
+    }
+
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; STAMP_SERIALIZED_NOTE_LEN]) -> [Field; 4] {
+        let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
+        note_utils::compute_note_hash_and_nullifier(StampNoteMethods, note_header, preimage)
     }
 }

@@ -70,10 +70,14 @@ pub fn get_attestation_content_hash(
     hash_bytes[1] = 0xbe;
     hash_bytes[2] = 0xe6;
     hash_bytes[3] = 0x19;
+    // hash_bytes[0] = 0x78;
+    // hash_bytes[1] = 0x99;
+    // hash_bytes[2] = 0xd5;
+    // hash_bytes[3] = 0x7f;
 
     for i in 0..32 {
-        hash_bytes[i + 4] = root_bytes[i];
-        hash_bytes[i + 36] = caller_on_l1_bytes[i];
+        hash_bytes[i + 4] = caller_on_l1_bytes[i];
+        hash_bytes[i + 36] = root_bytes[i];
     }
 
     sha256_to_field(hash_bytes)

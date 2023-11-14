@@ -269,11 +269,7 @@ export class ZybilDriver {
             root.toString(),
             { gasLimit: 30000000, gasPrice: parseUnits("20000000000", "wei") }
         );
-        let receipt = await tx.wait();
-        console.log("Sender: ", receipt.logs[0].args[0]);
-        console.log("Recipient: ", BigInt(receipt.logs[0].args[1]).toString(10));
-        console.log("Content Hash: ", BigInt(receipt.logs[0].args[2]).toString(10));
-
+        await tx.wait();
     }
 
     async getEthAddress(aztecWallet: AccountWallet): Promise<BigInt> {
@@ -315,7 +311,7 @@ export class ZybilDriver {
         return contentHash
     }
 
-    // async getAttestation(from: Signer): Promise<FieldLike> {
-    //     const root = await (this.eas.connect(from) as Contract).
-    // }
+    async getAttestation(from: Signer): Promise<FieldLike> {
+        return await (this.eas.connect(from) as Contract).attestations(await from.getAddress());
+    }
 }
