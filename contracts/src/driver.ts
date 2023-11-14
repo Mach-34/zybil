@@ -11,11 +11,12 @@ import {
     Wallet as AztecWallet,
     computeMessageSecretHash,
     AccountWallet,
+    sleep,
 } from '@aztec/aztec.js';
 import { OutboxAbi } from '@aztec/l1-artifacts';
-import { Signer, Contract, SigningKey, computeAddress, hashMessage, toUtf8Bytes, concat, getBytes, hexlify, keccak256 } from 'ethers';
+import { Signer, Contract, SigningKey, NonceManager, hashMessage, toUtf8Bytes, concat, getBytes, hexlify, parseUnits } from 'ethers';
 import { ZybilContract } from './artifacts/l2/Zybil.js';
-import { ENSFactory, PortalFactory } from './artifacts/index.js'
+import { ENSFactory, PortalFactory, EASFactory } from './artifacts/index.js'
 import { generateAddress, hexTou8Array } from './utils.js';
 import { Z_BUF_ERROR } from 'zlib';
 
@@ -44,24 +45,30 @@ export async function deployAndInitialize(
     zybil: AztecAddress;
     portal: Contract;
     ens: Contract;
+    eas: Contract;
 }> {
+    let signer = new NonceManager(ethWallet);
     // if underlying L1 contract address is not supplied, deploy it
-    const ensFactory = ENSFactory.connect(ethWallet);
+    const ensFactory = ENSFactory.connect(signer);
     const ens = await ensFactory.deploy() as Contract;
     await ens.waitForDeployment();
-
     // deploy L1 portal contract
-    const portalFactory = PortalFactory.connect(ethWallet);
+    const portalFactory = PortalFactory.connect(signer);
     const portal = await portalFactory.deploy() as Contract;
     await portal.waitForDeployment();
-
-
+    // deploy L1 EAS contract
+    const easFactory = EASFactory.connect(signer);
+    const eas = await easFactory.deploy({
+        // eas bs
+        gasLimit: 29000000,
+        gasPrice: parseUnits("20000000000", "wei"),
+    }) as Contract;
+    await eas.waitForDeployment();
     // deploy instance of L2 Zybil Contract using deployer as backend
     const backend = aztecWallet.getCompleteAddress().publicKey;
     const deployReceipt = await ZybilContract.deploy(aztecWallet, { x: backend.x, y: backend.y })
         .send({ portalContract: EthAddress.fromString(await portal.getAddress()) })
         .wait();
-
     // check that the deploy tx is confirmed
     if (deployReceipt.status !== TxStatus.MINED) throw new Error(`Deploy token tx status is ${deployReceipt.status}`);
     const zybil = await ZybilContract.at(deployReceipt.contractAddress!, aztecWallet);
@@ -70,16 +77,24 @@ export async function deployAndInitialize(
     // if ((await ))
     // if ((await token.methods.admin().view()) !== owner.toBigInt()) throw new Error(`Token admin is not ${owner}`);
 
+    // initialize EAS
+    (await eas.initialize(await portal.getAddress())).wait();
+    // we have to wait before initialize too. Why? I don't know.
+    await sleep(5000);
+
     // initialize L1 portal
     let tx = await portal.initialize(
         registry.toString(),
         await ens.getAddress(),
-        zybil.address.toString()
+        await eas.getAddress(),
+        zybil.address.toString(),
+        { gasLimit: 30000000, gasPrice: parseUnits("20000000000", "wei") } // also some eas bs
     );
     await tx.wait();
-
     // return contract addresses
-    return { zybil: zybil.address, portal, ens };
+    return { zybil: zybil.address, portal, ens, eas };
+    // return { zybil: zybil.address, portal, ens };
+
 }
 
 /**
@@ -112,8 +127,8 @@ export class ZybilDriver {
         );
 
         // Deploy and initialize all required contracts
-        logger('Deploying and initializing token, portal and its bridge...');
-        const { zybil, portal, ens } = await deployAndInitialize(
+        logger('Deploying and initializing eas, ens, and portal...');
+        const { zybil, portal, ens, eas } = await deployAndInitialize(
             aztecWallet,
             ethWallet,
             l1ContractAddresses.registryAddress,
@@ -126,6 +141,7 @@ export class ZybilDriver {
             zybil,
             portal,
             ens,
+            eas,
             outbox,
             aztecWallet
         );
@@ -140,8 +156,10 @@ export class ZybilDriver {
         public zybil: AztecAddress,
         /** Token portal instance. */
         public portal: Contract,
-        /** Underlying token for portal tests. */
+        /** Underlying ENS contract (L1 -> L2). */
         public ens: Contract,
+        /** Underlying EAS contract (L2 -> L1) */
+        public eas: Contract,
         /** Message Bridge Outbox. */
         public outbox: Contract,
         /** Backend Address */
@@ -236,6 +254,24 @@ export class ZybilDriver {
             throw new Error(`Failed to stamp Web2: ${receipt.status}`);
     }
 
+    async sendAttestationFromL2(aztecWallet: AccountWallet, recipient: Signer): Promise<void> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        const receipt = await instance.methods.attest_l1(
+            Fr.fromString(await recipient.getAddress())
+        ).send().wait();
+        if (receipt.status !== TxStatus.MINED)
+            throw new Error(`Failed to send attestation from l2 to l1: ${receipt.status}`);
+    }
+
+    async consumeAttestationOnL1(from: Signer, root: FieldLike): Promise<void> {
+        let signer = new NonceManager(from);
+        const tx = await (this.portal.connect(signer) as Contract).attestToStamps(
+            root.toString(),
+            { gasLimit: 30000000, gasPrice: parseUnits("20000000000", "wei") }
+        );
+        await tx.wait();
+    }
+
     async getEthAddress(aztecWallet: AccountWallet): Promise<BigInt> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
         // TODO: Get value from decoded log instead of unconstrained function
@@ -260,9 +296,22 @@ export class ZybilDriver {
         return [ethersHash, noirHash]
     }
 
-    async getNoteIds(aztecWallet: AccountWallet): Promise<Array<FieldLike>> {
+    async getStampRoot(aztecWallet: AccountWallet): Promise<FieldLike> {
         const instance = await ZybilContract.at(this.zybil, aztecWallet);
-        const val = await instance.methods.get_stamp_ids(aztecWallet.getAddress()).view();
+        const val = await instance.methods.compute_stamp_merkle_root(aztecWallet.getAddress()).view();
         return val;
+    }
+
+    async getAttestationContentHash(aztecWallet: AccountWallet, ethWallet: Signer): Promise<FieldLike> {
+        const instance = await ZybilContract.at(this.zybil, aztecWallet);
+        let contentHash = await instance.methods.compute_attestation_content_hash(
+            aztecWallet.getAddress(),
+            Fr.fromString(await ethWallet.getAddress())
+        ).view();
+        return contentHash
+    }
+
+    async getAttestation(from: Signer): Promise<FieldLike> {
+        return await (this.eas.connect(from) as Contract).attestations(await from.getAddress());
     }
 }

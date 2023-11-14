@@ -26,7 +26,7 @@ const {
 } = process.env;
 
 describe('Zybil', () => {
-    jest.setTimeout(90000);
+    jest.setTimeout(1500000);
 
     const ethProvider = new JsonRpcProvider(ETHEREUM_URL);
     const mnemonic = Mnemonic.fromPhrase(MNEMONIC);
@@ -55,9 +55,9 @@ describe('Zybil', () => {
         // initialize eth signers
         const hdPath = "m/44'/60'/0'/0";
         ethUsers = {
-            backend: HDNodeWallet.fromMnemonic(mnemonic, `${hdPath}/0`).connect(ethProvider),
-            alice: HDNodeWallet.fromMnemonic(mnemonic, `${hdPath}/1`).connect(ethProvider),
-            bob: HDNodeWallet.fromMnemonic(mnemonic, `${hdPath}/2`).connect(ethProvider),
+            backend: HDNodeWallet.fromMnemonic(mnemonic, `${hdPath}/1`).connect(ethProvider),
+            alice: HDNodeWallet.fromMnemonic(mnemonic, `${hdPath}/2`).connect(ethProvider),
+            bob: HDNodeWallet.fromMnemonic(mnemonic, `${hdPath}/3`).connect(ethProvider),
         }
 
         // initialize aztec signers
@@ -75,6 +75,7 @@ describe('Zybil', () => {
     })
 
     test("Insert Gmail Stamp", async () => {
+        // console.log(await driver.eas.getAddress());
         const verifiedData = { stampType: StampType.GOOGLE, id: 'Test@gmail.com' };
         const { msg, signature } = await generateSignatureAndMsg(verifiedData, GRUMPKIN_PRIV_KEY!);
         await driver.stampWeb2(aztecUsers.alice, msg, signature);
@@ -122,9 +123,17 @@ describe('Zybil', () => {
         expect(score).toEqual(52);
     })
 
-    test("Get ids of each stamp", async () => {
-        const ids = await driver.getNoteIds(aztecUsers.alice);
-        console.log("after: ", ids);
+    test("Test content hash", async () => {
+        // get stamp root
+        const root = await driver.getStampRoot(aztecUsers.alice);
+        // send attestation from L2
+        await driver.sendAttestationFromL2(aztecUsers.alice, ethUsers.alice);
+        // consume attestation on L1
+        await driver.consumeAttestationOnL1(ethUsers.alice, root);
+        // get attestation stored on L1 and compare to expected root
+        console.log("Expected Attestation: ", root);
+        const attestation = await driver.getAttestation(ethUsers.alice);
+        expect(attestation).toEqual(root);
     });
 })
 

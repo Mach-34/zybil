@@ -51,14 +51,38 @@ pub fn get_ens_stamp_private_content_hash(
     sha256_to_field(hash_bytes)
 }
 
-// pub fn get_attestation_content_hash(
-//     recipient: Field,
-//     caller_on_l1: Field,
-// )
+/**
+ * Generate the content hash for posting an attestation from L2 to L1
+ * @param root - computed merkle root of stamp data to post to L1
+ * @param caller_on_l1 - the account permissioned to post the attestation to L1
+ * @return - the content hash used to recreate and authenticate the attestation on L1
+ */
+pub fn get_attestation_content_hash(
+    root: Field,
+    caller_on_l1: Field,
+) -> Field {
+    let mut hash_bytes: [u8; 68] = [0; 68];
+    let root_bytes = root.to_be_bytes(32);
+    let caller_on_l1_bytes = caller_on_l1.to_be_bytes(32);
 
-// pub fn compute_attestation_merkle_root([Option<StampNote>; MAX_NOTES_PER_PAGE]) -> [Field; MAX_NOTES_PER_PAGE] {
-//     let notes = storage.stamps.at(owner.address).view_notes(options);
-// }
+    // ethers.id("attest(address, uint256)").slice(0, 10)
+    hash_bytes[0] = 0x63;
+    hash_bytes[1] = 0xbe;
+    hash_bytes[2] = 0xe6;
+    hash_bytes[3] = 0x19;
+    // hash_bytes[0] = 0x78;
+    // hash_bytes[1] = 0x99;
+    // hash_bytes[2] = 0xd5;
+    // hash_bytes[3] = 0x7f;
+
+    for i in 0..32 {
+        hash_bytes[i + 4] = caller_on_l1_bytes[i];
+        hash_bytes[i + 36] = root_bytes[i];
+    }
+
+    sha256_to_field(hash_bytes)
+}
+
 pub fn filter_eth_address_stamp(notes: [Option<StampNote>; MAX_NOTES_PER_PAGE]) -> [Option<StampNote>; 1] {
     let mut eth_stamp_ret = [Option::none(); 1];
     for i in 0..notes.len() {

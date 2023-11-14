@@ -6,6 +6,7 @@ import {IInbox} from "@aztec/l1-contracts/src/core/interfaces/messagebridge/IInb
 import {DataStructures} from "@aztec/l1-contracts/src/core/libraries/DataStructures.sol";
 import {Hash} from "@aztec/l1-contracts/src/core/libraries/Hash.sol";
 import {ToyENS, Record} from "./ToyENS.sol";
+import {ToyEAS} from "./ToyEAS.sol";
 
 contract ZybilPortal {
     event L2Message(
@@ -14,20 +15,27 @@ contract ZybilPortal {
         uint256 _timestamp,
         address _address
     );
+    event L1MSG(bytes32 _key);
 
     IRegistry public registry;
-    ToyENS public underlying;
+    ToyENS public ens;
+    ToyEAS public eas;
+    // address public eas;
+
     bytes32 public l2ZybilAddress;
     bool initialized;
 
     function initialize(
         address _registry,
-        address _underlying,
+        address _ens,
+        address _eas,
         bytes32 _l2ZybilAddress
     ) public {
         require(initialized == false, "Already initialized");
         registry = IRegistry(_registry);
-        underlying = ToyENS(_underlying);
+        ens = ToyENS(_ens);
+        eas = ToyEAS(_eas);
+        // eas = _eas;
         l2ZybilAddress = _l2ZybilAddress;
         initialized = true;
     }
@@ -87,14 +95,38 @@ contract ZybilPortal {
         emit L2Message(_key, nameBytes, timestamp, msg.sender);
     }
 
+    function attestToStamps(uint256 _root) external returns (bytes32) {
+        // compute content hash
+        DataStructures.L2ToL1Msg memory message = DataStructures.L2ToL1Msg({
+            sender: DataStructures.L2Actor(l2ZybilAddress, 1),
+            recipient: DataStructures.L1Actor(address(this), block.chainid),
+            content: Hash.sha256ToField(
+                abi.encodeWithSignature(
+                    "attest(address, uint256)",
+                    msg.sender,
+                    _root
+                )
+            )
+        });
+
+        // consume message
+        bytes32 key = registry.getOutbox().consume(message);
+        // perform attestation
+        eas.attest(msg.sender, _root);
+        // emit key
+        emit L1MSG(key);
+        // return message key
+        return key;
+    }
+
     function getENSRecordAge(
         address _account
     ) public view returns (string memory _name, uint256 _timestamp) {
         // get name (will fail if no ens registered)
         // todo: handle 256 bit names
-        _name = underlying.getReverse(_account);
+        _name = ens.getReverse(_account);
         // get timestamp = records
-        (, , _timestamp) = underlying.records(_name);
+        (, , _timestamp) = ens.records(_name);
     }
 
     /**

@@ -79,8 +79,17 @@ export class ZybilContract extends ContractBase {
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public methods!: {
     
+    /** attest_l1(caller_on_l1: field) */
+    attest_l1: ((caller_on_l1: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** compute_attestation_content_hash(owner: field, caller_on_l1: field) */
+    compute_attestation_content_hash: ((owner: FieldLike, caller_on_l1: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** compute_note_hash_and_nullifier(contract_address: field, nonce: field, storage_slot: field, preimage: array) */
     compute_note_hash_and_nullifier: ((contract_address: FieldLike, nonce: FieldLike, storage_slot: FieldLike, preimage: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** compute_stamp_merkle_root(owner: field) */
+    compute_stamp_merkle_root: ((owner: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** encode_msg(msg: array) */
     encode_msg: ((msg: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -93,9 +102,6 @@ export class ZybilContract extends ContractBase {
 
     /** get_score(owner: struct) */
     get_score: ((owner: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** get_stamp_ids(owner: field) */
-    get_stamp_ids: ((owner: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** initialize(signer_x: field, signer_y: field) */
     initialize: ((signer_x: FieldLike, signer_y: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
